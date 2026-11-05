@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cloudscale-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cloudscale}
+      POSTGRES_USER: ${POSTGRES_USER:-cloudscale_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cloudscale_secure_pass_2026}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudscale_admin} -d ${POSTGRES_DB:-cloudscale}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cloudscale-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cloudscale-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - cloudscale-network
+
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    container_name: cloudscale-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - cloudscale-network
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: cloudscale-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - cloudscale-network
+
+networks:
+  cloudscale-network:
+    name: cloudscale-network
+    driver: bridge
+
+volumes:
+  pgdata:
+    name: cloudscale-pgdata
+  redisdata:
+    name: cloudscale-redisdata
+  prometheus_data:
+    name: cloudscale-prometheus-data
+  grafana_data:
+    name: cloudscale-grafana-data

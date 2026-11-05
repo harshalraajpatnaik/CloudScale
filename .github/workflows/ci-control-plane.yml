@@ -1,0 +1,53 @@
+name: Control Plane CI
+
+on:
+  push:
+    paths:
+      - 'control-plane/**'
+      - '.github/workflows/ci-control-plane.yml'
+  pull_request:
+    paths:
+      - 'control-plane/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cloudscale
+          POSTGRES_USER: cloudscale_admin
+          POSTGRES_PASSWORD: cloudscale_secure_pass_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn clean test
+        working-directory: control-plane

@@ -1,0 +1,37 @@
+<div class="health-container">
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">Platform Foundation &amp; Service Health</h1>
+      <p class="page-subtitle">Real-time connectivity status across CloudScale distributed microservices</p>
+    </div>
+    <button class="btn-refresh" (click)="checkAllServices()">
+      🔄 Refresh Probes
+    </button>
+  </div>
+
+  <div class="services-grid">
+    <div *ngFor="let s of services()" class="service-card" [ngClass]="s.status.toLowerCase()">
+      <div class="card-header">
+        <span class="service-name">{{ s.name }}</span>
+        <span class="status-badge" [ngClass]="s.status.toLowerCase()">
+          {{ s.status }}
+        </span>
+      </div>
+
+      <div class="endpoint-info">
+        <span class="label">Target Probe:</span>
+        <code>{{ s.url }}</code>
+      </div>
+
+      <div *ngIf="s.details" class="details-section">
+        <span class="label">Response Payload:</span>
+        <pre>{{ s.details | json }}</pre>
+      </div>
+
+      <div *ngIf="s.error" class="error-section">
+        <span class="label">Probe Diagnostic:</span>
+        <p class="error-msg">{{ s.error }}</p>
+      </div>
+    </div>
+  </div>
+</div>
