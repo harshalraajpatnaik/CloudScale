@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MetricsService } from '../../../core/services/metrics.service';
@@ -30,6 +30,73 @@ export class MetricsDashboardComponent implements OnInit, OnDestroy {
   refreshInterval = 15; // seconds
   private refreshTimer: any;
 
+  // Search, Sort & Pagination State
+  searchQuery = signal<string>('');
+  sortColumn = signal<string>('sampledAt');
+  sortDirection = signal<'asc' | 'desc'>('desc');
+  currentPage = signal<number>(1);
+  pageSize = signal<number>(15);
+
+  // Filtered and Sorted Records
+  filteredMetrics = computed(() => {
+    let list = this.metrics();
+    const query = this.searchQuery().trim().toLowerCase();
+    if (query) {
+      list = list.filter(m =>
+        (m.hostname && m.hostname.toLowerCase().includes(query)) ||
+        m.cpuUtilizationPercent.toString().includes(query) ||
+        m.memoryUtilizationPercent.toString().includes(query) ||
+        (m.activeWorkloadCount != null && m.activeWorkloadCount.toString().includes(query)) ||
+        (m.sampledAt && m.sampledAt.toLowerCase().includes(query))
+      );
+    }
+
+    const col = this.sortColumn();
+    const dir = this.sortDirection() === 'asc' ? 1 : -1;
+
+    return [...list].sort((a, b) => {
+      let aVal: any = (a as any)[col];
+      let bVal: any = (b as any)[col];
+
+      if (col === 'sampledAt') {
+        aVal = new Date(aVal || 0).getTime();
+        bVal = new Date(bVal || 0).getTime();
+      } else if (typeof aVal === 'string') {
+        return aVal.localeCompare(bVal || '') * dir;
+      } else {
+        aVal = Number(aVal || 0);
+        bVal = Number(bVal || 0);
+      }
+      return (aVal > bVal ? 1 : aVal < bVal ? -1 : 0) * dir;
+    });
+  });
+
+  // Paginated Sliced Metrics
+  paginatedMetrics = computed(() => {
+    const list = this.filteredMetrics();
+    const size = this.pageSize();
+    if (size <= 0) return list;
+    const start = (this.currentPage() - 1) * size;
+    return list.slice(start, start + size);
+  });
+
+  totalPages = computed(() => {
+    const size = this.pageSize();
+    if (size <= 0) return 1;
+    return Math.max(1, Math.ceil(this.filteredMetrics().length / size));
+  });
+
+  startIndex = computed(() => {
+    if (this.filteredMetrics().length === 0) return 0;
+    return (this.currentPage() - 1) * this.pageSize() + 1;
+  });
+
+  endIndex = computed(() => {
+    const size = this.pageSize();
+    if (size <= 0) return this.filteredMetrics().length;
+    return Math.min(this.filteredMetrics().length, this.currentPage() * size);
+  });
+
   ngOnInit(): void {
     this.fetchNodesAndInitialData();
     this.setupRefreshTimer();
@@ -52,7 +119,7 @@ export class MetricsDashboardComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to load compute nodes');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to load compute nodes');
         this.isLoading.set(false);
       }
     });
@@ -88,7 +155,7 @@ export class MetricsDashboardComponent implements OnInit, OnDestroy {
         this.isLoading.set(false);
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to load telemetry samples');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to load telemetry samples');
         this.isLoading.set(false);
       }
     });
@@ -96,17 +163,53 @@ export class MetricsDashboardComponent implements OnInit, OnDestroy {
 
   onNodeSelected(nodeId: string): void {
     this.selectedNodeId.set(nodeId);
+    this.currentPage.set(1);
     this.fetchNodeMetrics(nodeId);
   }
 
   onDurationChange(duration: number): void {
     this.selectedDuration = duration;
+    this.currentPage.set(1);
     this.refreshAllData();
   }
 
   onIntervalChange(interval: number): void {
     this.refreshInterval = interval;
     this.setupRefreshTimer();
+  }
+
+  // --- Sorting & Pagination Handlers ---
+  onSort(column: string): void {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('desc');
+    }
+    this.currentPage.set(1);
+  }
+
+  setPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  onPageSizeChange(event: Event): void {
+    const val = Number((event.target as HTMLSelectElement).value);
+    this.pageSize.set(val);
+    this.currentPage.set(1);
+  }
+
+  onSearchChange(event: Event): void {
+    const val = (event.target as HTMLInputElement).value;
+    this.searchQuery.set(val);
+    this.currentPage.set(1);
+  }
+
+  clearSearch(): void {
+    this.searchQuery.set('');
+    this.currentPage.set(1);
   }
 
   private setupRefreshTimer(): void {

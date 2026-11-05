@@ -141,47 +141,133 @@
   <!-- Telemetry Samples Table -->
   <div class="table-card" *ngIf="metrics().length > 0">
     <div class="table-header">
-      <h3>Recent Telemetry Samples ({{ metrics().length }})</h3>
+      <div class="table-title-group">
+        <h3>Recent Telemetry Samples ({{ filteredMetrics().length }} of {{ metrics().length }})</h3>
+        <span class="table-subtitle">Granular time-series node metrics supporting interactive sorting, search, and pagination.</span>
+      </div>
+
+      <!-- Search and Page Size Toolbar -->
+      <div class="table-toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            placeholder="Search host, metrics..." 
+            [value]="searchQuery()" 
+            (input)="onSearchChange($event)"
+            class="search-input" />
+          <button *ngIf="searchQuery()" (click)="clearSearch()" class="btn-clear-search">✕</button>
+        </div>
+
+        <div class="page-size-selector">
+          <label for="pageSize">Rows:</label>
+          <select id="pageSize" [value]="pageSize()" (change)="onPageSizeChange($event)" class="select-page-size">
+            <option [value]="10">10</option>
+            <option [value]="15">15</option>
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+            <option [value]="-1">All</option>
+          </select>
+        </div>
+      </div>
     </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Sampled Time</th>
-          <th>Host</th>
-          <th>CPU Saturation</th>
-          <th>Memory Saturation</th>
-          <th>Disk I/O</th>
-          <th>Network Throughput</th>
-          <th>Active Workloads</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let m of metrics() | slice:0:15">
-          <td>{{ m.sampledAt | date:'mediumTime' }}</td>
-          <td><code>{{ m.hostname }}</code></td>
-          <td>
-            <span class="metric-pill" [class.danger]="m.cpuUtilizationPercent >= 80" [class.warning]="m.cpuUtilizationPercent >= 60 && m.cpuUtilizationPercent < 80">
-              {{ m.cpuUtilizationPercent }}%
-            </span>
-          </td>
-          <td>
-            <span class="metric-pill" [class.danger]="m.memoryUtilizationPercent >= 85" [class.warning]="m.memoryUtilizationPercent >= 65 && m.memoryUtilizationPercent < 85">
-              {{ m.memoryUtilizationPercent }}%
-            </span>
-          </td>
-          <td>
-            <span class="io-stat">R: {{ (m.diskReadBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
-            <span class="io-stat">W: {{ (m.diskWriteBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
-          </td>
-          <td>
-            <span class="io-stat">Rx: {{ (m.networkRxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
-            <span class="io-stat">Tx: {{ (m.networkTxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
-          </td>
-          <td>
-            <span class="badge-workload-count">{{ m.activeWorkloadCount }} workloads</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+
+    <!-- Scrollable Data Table Container -->
+    <div class="table-scroll-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="onSort('sampledAt')">
+              Sampled Time
+              <span class="sort-indicator" *ngIf="sortColumn() === 'sampledAt'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('hostname')">
+              Host
+              <span class="sort-indicator" *ngIf="sortColumn() === 'hostname'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('cpuUtilizationPercent')">
+              CPU Saturation
+              <span class="sort-indicator" *ngIf="sortColumn() === 'cpuUtilizationPercent'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('memoryUtilizationPercent')">
+              Memory Saturation
+              <span class="sort-indicator" *ngIf="sortColumn() === 'memoryUtilizationPercent'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('diskReadBytesSec')">
+              Disk I/O
+              <span class="sort-indicator" *ngIf="sortColumn() === 'diskReadBytesSec'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('networkRxBytesSec')">
+              Network Throughput
+              <span class="sort-indicator" *ngIf="sortColumn() === 'networkRxBytesSec'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="sortable" (click)="onSort('activeWorkloadCount')">
+              Active Workloads
+              <span class="sort-indicator" *ngIf="sortColumn() === 'activeWorkloadCount'">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of paginatedMetrics()">
+            <td>{{ m.sampledAt | date:'mediumTime' }}</td>
+            <td><code>{{ m.hostname }}</code></td>
+            <td>
+              <span class="metric-pill" [class.danger]="m.cpuUtilizationPercent >= 80" [class.warning]="m.cpuUtilizationPercent >= 60 && m.cpuUtilizationPercent < 80">
+                {{ m.cpuUtilizationPercent }}%
+              </span>
+            </td>
+            <td>
+              <span class="metric-pill" [class.danger]="m.memoryUtilizationPercent >= 85" [class.warning]="m.memoryUtilizationPercent >= 65 && m.memoryUtilizationPercent < 85">
+                {{ m.memoryUtilizationPercent }}%
+              </span>
+            </td>
+            <td>
+              <span class="io-stat">R: {{ (m.diskReadBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+              <span class="io-stat">W: {{ (m.diskWriteBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+            </td>
+            <td>
+              <span class="io-stat">Rx: {{ (m.networkRxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+              <span class="io-stat">Tx: {{ (m.networkTxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+            </td>
+            <td>
+              <span class="badge-workload-count">{{ m.activeWorkloadCount }} workloads</span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredMetrics().length === 0">
+            <td colspan="7" class="text-center py-6 text-muted">
+              No telemetry samples matched your search query "{{ searchQuery() }}".
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table Pagination Footer -->
+    <div class="table-pagination" *ngIf="filteredMetrics().length > 0 && pageSize() > 0">
+      <div class="pagination-info">
+        Showing <strong>{{ startIndex() }}</strong> - <strong>{{ endIndex() }}</strong> of <strong>{{ filteredMetrics().length }}</strong> samples
+      </div>
+
+      <div class="pagination-controls">
+        <button 
+          class="btn-page" 
+          [disabled]="currentPage() === 1" 
+          (click)="setPage(currentPage() - 1)">
+          ‹ Prev
+        </button>
+
+        <span class="page-indicator">
+          Page <strong>{{ currentPage() }}</strong> of <strong>{{ totalPages() }}</strong>
+        </span>
+
+        <button 
+          class="btn-page" 
+          [disabled]="currentPage() === totalPages()" 
+          (click)="setPage(currentPage() + 1)">
+          Next ›
+        </button>
+      </div>
+    </div>
   </div>
 </div>
