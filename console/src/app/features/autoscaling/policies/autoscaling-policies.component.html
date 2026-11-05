@@ -1,0 +1,254 @@
+<div class="autoscaling-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Autoscaling Controller & Policies</h1>
+      <p class="page-subtitle">Configure rule-based horizontal scaling policies, threshold triggers, cooldown damping, and audit scaling events.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="fetchData()" [disabled]="isLoading()">
+        <span *ngIf="!isLoading()">↻ Refresh</span>
+        <span *ngIf="isLoading()">Refreshing...</span>
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        + Create Scaling Policy
+      </button>
+    </div>
+  </header>
+
+  <!-- Flash Messages -->
+  <div class="alert alert-success" *ngIf="successMessage()">
+    {{ successMessage() }}
+  </div>
+  <div class="alert alert-danger" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+  </div>
+
+  <!-- Manual Evaluation Result Card -->
+  <div class="eval-result-card" *ngIf="evaluationResult() as res">
+    <div class="eval-header">
+      <div class="eval-title-group">
+        <span class="eval-badge badge-{{ res.decision.toLowerCase() }}">{{ res.decision }}</span>
+        <h3>Evaluation Result for Workload</h3>
+      </div>
+      <button class="btn-close" (click)="dismissEvaluationResult()">✕</button>
+    </div>
+    <div class="eval-body">
+      <div class="eval-stat-grid">
+        <div class="stat-item">
+          <span class="stat-label">Replica Change</span>
+          <span class="stat-value">{{ res.previousReplicas }} ➔ {{ res.newReplicas }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Trigger Metric</span>
+          <span class="stat-value">{{ res.triggerMetric }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Trigger Value</span>
+          <span class="stat-value">{{ res.triggerValue }}%</span>
+        </div>
+      </div>
+      <p class="eval-reason">{{ res.reasoning }}</p>
+    </div>
+  </div>
+
+  <!-- Manual Evaluation Simulation Controls -->
+  <div class="sim-eval-bar">
+    <div class="sim-label">
+      <span>⚙️ Manual Rule Evaluation Simulator:</span>
+    </div>
+    <div class="sim-inputs">
+      <label for="simCpu">Test with CPU Utilization %:</label>
+      <input id="simCpu" type="number" [(ngModel)]="simulatedCpuInput" class="sim-input" min="0" max="100" step="5" />
+      <span class="sim-hint">(Click 'Evaluate' on any policy below to trigger immediate rule processing)</span>
+    </div>
+  </div>
+
+  <!-- Policies Table -->
+  <div class="table-card" *ngIf="policies().length > 0; else noPolicies">
+    <div class="table-header">
+      <h2>Configured Autoscaling Policies ({{ policies().length }})</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Workload</th>
+          <th>Scale-Up Threshold</th>
+          <th>Scale-Down Threshold</th>
+          <th>Replica Bounds</th>
+          <th>Cooldown Period</th>
+          <th>Last Scaled</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of policies()">
+          <td>
+            <div class="workload-name">{{ p.workloadName }}</div>
+            <div class="workload-id">{{ p.workloadId | slice:0:8 }}...</div>
+          </td>
+          <td>
+            <span class="threshold-pill pill-up">
+              ≥ {{ p.cpuScaleUpThreshold }}% CPU
+            </span>
+          </td>
+          <td>
+            <span class="threshold-pill pill-down">
+              ≤ {{ p.cpuScaleDownThreshold }}% CPU
+            </span>
+          </td>
+          <td>
+            <span class="replica-range">{{ p.minReplicas }} - {{ p.maxReplicas }} replicas</span>
+          </td>
+          <td>
+            <span class="cooldown-badge">{{ p.cooldownSeconds }}s cooldown</span>
+          </td>
+          <td>
+            <span *ngIf="p.lastScaledAt">{{ p.lastScaledAt | date:'shortTime' }}</span>
+            <span *ngIf="!p.lastScaledAt" class="text-muted">Never</span>
+          </td>
+          <td class="text-right">
+            <div class="action-buttons">
+              <button 
+                class="btn-tbl btn-eval" 
+                (click)="evaluatePolicy(p)"
+                [disabled]="isEvaluating()"
+                title="Execute immediate rule evaluation">
+                ⚡ Evaluate
+              </button>
+              <button 
+                class="btn-tbl btn-delete" 
+                (click)="deletePolicy(p)"
+                title="Remove policy">
+                ✕
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #noPolicies>
+    <div class="empty-state">
+      <div class="empty-icon">📈</div>
+      <h3>No Scaling Policies Configured</h3>
+      <p>Attach an autoscaling policy to an active workload to enable automated capacity elasticity.</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">+ Create Policy</button>
+    </div>
+  </ng-template>
+
+  <!-- Scaling Events Audit Trail -->
+  <div class="table-card events-card" *ngIf="scalingEvents().length > 0">
+    <div class="table-header">
+      <h2>Scaling Events Audit History ({{ scalingEvents().length }})</h2>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Executed Time</th>
+          <th>Workload</th>
+          <th>Action</th>
+          <th>Replicas</th>
+          <th>Trigger</th>
+          <th>Reasoning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of scalingEvents()">
+          <td>{{ e.executedAt | date:'mediumTime' }}</td>
+          <td><code>{{ e.workloadName }}</code></td>
+          <td>
+            <span class="event-pill event-{{ e.actionType.toLowerCase() }}">
+              {{ e.actionType }}
+            </span>
+          </td>
+          <td>
+            <span class="replica-change">{{ e.previousReplicas }} ➔ {{ e.newReplicas }}</span>
+          </td>
+          <td>
+            <span class="trigger-info">{{ e.triggerMetric }} ({{ e.triggerValue }}%)</span>
+          </td>
+          <td class="reason-cell">
+            {{ e.reasoning }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create Policy Modal Dialog -->
+  <div class="modal-backdrop" *ngIf="showCreateModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>Create Autoscaling Policy</h2>
+        <button class="btn-close" (click)="closeCreateModal()">✕</button>
+      </div>
+      <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="workloadSelect">Target Workload</label>
+            <select id="workloadSelect" formControlName="workloadId" class="form-input select-styled">
+              <option *ngFor="let w of workloads()" [value]="w.id">
+                {{ w.name }} ({{ w.workloadType }} - {{ w.actualState }})
+              </option>
+            </select>
+            <span class="field-error" *ngIf="createForm.get('workloadId')?.touched && createForm.get('workloadId')?.invalid">
+              Please select a workload.
+            </span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="cpuScaleUp">Scale-Up Threshold (% CPU)</label>
+              <input id="cpuScaleUp" type="number" formControlName="cpuScaleUpThreshold" class="form-input" min="10" max="100" />
+              <span class="field-error" *ngIf="createForm.get('cpuScaleUpThreshold')?.touched && createForm.get('cpuScaleUpThreshold')?.invalid">
+                Must be between 10% and 100%.
+              </span>
+            </div>
+
+            <div class="form-group col">
+              <label for="cpuScaleDown">Scale-Down Threshold (% CPU)</label>
+              <input id="cpuScaleDown" type="number" formControlName="cpuScaleDownThreshold" class="form-input" min="5" max="90" />
+              <span class="field-error" *ngIf="createForm.get('cpuScaleDownThreshold')?.touched && createForm.get('cpuScaleDownThreshold')?.invalid">
+                Must be between 5% and 90%.
+              </span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="minReplicas">Min Replicas</label>
+              <input id="minReplicas" type="number" formControlName="minReplicas" class="form-input" min="1" max="10" />
+            </div>
+
+            <div class="form-group col">
+              <label for="maxReplicas">Max Replicas</label>
+              <input id="maxReplicas" type="number" formControlName="maxReplicas" class="form-input" min="1" max="100" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="cooldownSeconds">Cooldown Period (Seconds)</label>
+              <input id="cooldownSeconds" type="number" formControlName="cooldownSeconds" class="form-input" min="10" max="3600" step="30" />
+              <p class="field-hint">Damps oscillation/flapping.</p>
+            </div>
+
+            <div class="form-group col">
+              <label for="evaluationWindow">Evaluation Window (Seconds)</label>
+              <input id="evaluationWindow" type="number" formControlName="evaluationWindowSeconds" class="form-input" min="30" max="3600" step="30" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Creating...' : 'Create Policy' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

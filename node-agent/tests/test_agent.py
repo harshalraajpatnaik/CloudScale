@@ -22,3 +22,25 @@ async def test_agent_metric_sample():
         assert "cpu_utilization_percent" in data
         assert "memory_utilization_percent" in data
         assert data["is_simulated"] is True
+
+@pytest.mark.asyncio
+async def test_push_telemetry_simulation():
+    from agent.publisher import push_telemetry
+    from unittest.mock import AsyncMock, patch
+
+    mock_client = AsyncMock()
+    mock_client.post.return_value.status_code = 201
+
+    sample = {
+        "cpu_utilization_percent": 45.5,
+        "memory_utilization_percent": 60.2,
+        "disk_read_bytes_sec": 1000,
+        "disk_write_bytes_sec": 2000,
+        "network_rx_bytes_sec": 3000,
+        "network_tx_bytes_sec": 4000,
+        "active_workload_count": 2
+    }
+
+    success = await push_telemetry(mock_client, "http://localhost:8080", "node-123", sample, "test-token")
+    assert success is True
+    mock_client.post.assert_called_once()

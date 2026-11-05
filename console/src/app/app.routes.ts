@@ -26,6 +26,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/workloads/workload-list/workload-list.component').then(m => m.WorkloadListComponent)
   },
   {
+    path: 'metrics',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/monitoring/metrics-dashboard/metrics-dashboard.component').then(m => m.MetricsDashboardComponent)
+  },
+  {
+    path: 'autoscaling',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/autoscaling/policies/autoscaling-policies.component').then(m => m.AutoscalingPoliciesComponent)
+  },
+  {
     path: 'health',
     loadComponent: () => import('./features/health/health.component').then(m => m.HealthComponent)
   },

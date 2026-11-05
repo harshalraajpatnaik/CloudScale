@@ -1,0 +1,187 @@
+<div class="metrics-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Infrastructure Metrics & Telemetry</h1>
+      <p class="page-subtitle">Real-time resource utilization, diurnal telemetry curves, and time-series capacity tracking.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="refreshAllData()" [disabled]="isLoading()">
+        <span *ngIf="!isLoading()">↻ Refresh</span>
+        <span *ngIf="isLoading()">Refreshing...</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Flash Error -->
+  <div class="alert alert-danger" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+  </div>
+
+  <!-- Cluster Overview Summary Cards -->
+  <section class="metrics-grid" *ngIf="clusterSummary() as s">
+    <div class="metric-card">
+      <div class="metric-label">Average CPU Saturation</div>
+      <div class="metric-value">{{ s.averageCpuUtilizationPercent }}%</div>
+      <div class="metric-hint">Peak: {{ s.peakCpuUtilizationPercent }}% across cluster</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Average Memory Saturation</div>
+      <div class="metric-value">{{ s.averageMemoryUtilizationPercent }}%</div>
+      <div class="metric-hint">Peak: {{ s.peakMemoryUtilizationPercent }}% across cluster</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Active Compute Hosts</div>
+      <div class="metric-value">{{ s.activeNodes }} / {{ s.totalNodes }}</div>
+      <div class="metric-hint">Healthy reporting nodes</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Active Workloads</div>
+      <div class="metric-value text-primary">{{ s.totalActiveWorkloads }}</div>
+      <div class="metric-hint">Allocated instances running</div>
+    </div>
+  </section>
+
+  <!-- Telemetry Control Bar -->
+  <div class="control-bar">
+    <div class="control-group">
+      <label for="nodeSelect">Select Host:</label>
+      <select id="nodeSelect" [ngModel]="selectedNodeId()" (ngModelChange)="onNodeSelected($event)" class="select-input">
+        <option *ngFor="let n of nodes()" [value]="n.id">
+          {{ n.hostname }} ({{ n.ipAddress }}) - {{ n.isSimulated ? '[SIMULATED]' : '[PHYSICAL]' }}
+        </option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="durationSelect">Time Window:</label>
+      <select id="durationSelect" [ngModel]="selectedDuration" (ngModelChange)="onDurationChange($event)" class="select-input">
+        <option [ngValue]="15">Last 15 minutes</option>
+        <option [ngValue]="60">Last 1 hour</option>
+        <option [ngValue]="360">Last 6 hours</option>
+        <option [ngValue]="1440">Last 24 hours</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="intervalSelect">Live Polling:</label>
+      <select id="intervalSelect" [ngModel]="refreshInterval" (ngModelChange)="onIntervalChange($event)" class="select-input">
+        <option [ngValue]="0">Paused</option>
+        <option [ngValue]="5">Every 5 seconds</option>
+        <option [ngValue]="15">Every 15 seconds</option>
+        <option [ngValue]="30">Every 30 seconds</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Real-time SVG Telemetry Chart Card -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title-group">
+        <h2 class="chart-title">Resource Utilization History: {{ selectedNode?.hostname || 'All Nodes' }}</h2>
+        <span class="chart-subtitle">Sampled telemetry curve with autoscaling threshold boundaries</span>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot cpu-dot"></span> CPU Utilization</span>
+        <span class="legend-item"><span class="legend-dot mem-dot"></span> Memory Utilization</span>
+        <span class="legend-item"><span class="legend-line scaleup-line"></span> Scale-Up (80%)</span>
+        <span class="legend-item"><span class="legend-line scaledown-line"></span> Scale-Down (30%)</span>
+      </div>
+    </div>
+
+    <div class="chart-body" *ngIf="metrics().length > 0; else noChartData">
+      <svg class="telemetry-svg" viewBox="0 0 800 240" preserveAspectRatio="none">
+        <!-- Background Gridlines -->
+        <line x1="20" y1="20" x2="780" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+        <text x="5" y="24" fill="var(--color-text-muted)" font-size="10">100%</text>
+
+        <!-- 80% Scale-Up Threshold Line -->
+        <line x1="20" y1="64" x2="780" y2="64" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,4" />
+        <text x="5" y="68" fill="#ef4444" font-size="9">80%</text>
+
+        <line x1="20" y1="120" x2="780" y2="120" stroke="rgba(255,255,255,0.06)" stroke-width="1" />
+        <text x="5" y="124" fill="var(--color-text-muted)" font-size="10">50%</text>
+
+        <!-- 30% Scale-Down Threshold Line -->
+        <line x1="20" y1="174" x2="780" y2="174" stroke="#10b981" stroke-width="1" stroke-dasharray="4,4" />
+        <text x="5" y="178" fill="#10b981" font-size="9">30%</text>
+
+        <line x1="20" y1="220" x2="780" y2="220" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+        <text x="5" y="224" fill="var(--color-text-muted)" font-size="10">0%</text>
+
+        <!-- Memory Utilization Curve -->
+        <polyline 
+          [attr.points]="chartPointsMemory" 
+          fill="none" 
+          stroke="#a855f7" 
+          stroke-width="2.5" 
+          stroke-linejoin="round" 
+          stroke-linecap="round" />
+
+        <!-- CPU Utilization Curve -->
+        <polyline 
+          [attr.points]="chartPointsCpu" 
+          fill="none" 
+          stroke="#3b82f6" 
+          stroke-width="2.5" 
+          stroke-linejoin="round" 
+          stroke-linecap="round" />
+      </svg>
+    </div>
+
+    <ng-template #noChartData>
+      <div class="empty-chart">
+        <div class="empty-chart-icon">📊</div>
+        <p>No telemetry metrics collected for this node in the selected time window.</p>
+        <span class="empty-hint">Start the simulated node agent to stream telemetry or register a new host.</span>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Telemetry Samples Table -->
+  <div class="table-card" *ngIf="metrics().length > 0">
+    <div class="table-header">
+      <h3>Recent Telemetry Samples ({{ metrics().length }})</h3>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Sampled Time</th>
+          <th>Host</th>
+          <th>CPU Saturation</th>
+          <th>Memory Saturation</th>
+          <th>Disk I/O</th>
+          <th>Network Throughput</th>
+          <th>Active Workloads</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of metrics() | slice:0:15">
+          <td>{{ m.sampledAt | date:'mediumTime' }}</td>
+          <td><code>{{ m.hostname }}</code></td>
+          <td>
+            <span class="metric-pill" [class.danger]="m.cpuUtilizationPercent >= 80" [class.warning]="m.cpuUtilizationPercent >= 60 && m.cpuUtilizationPercent < 80">
+              {{ m.cpuUtilizationPercent }}%
+            </span>
+          </td>
+          <td>
+            <span class="metric-pill" [class.danger]="m.memoryUtilizationPercent >= 85" [class.warning]="m.memoryUtilizationPercent >= 65 && m.memoryUtilizationPercent < 85">
+              {{ m.memoryUtilizationPercent }}%
+            </span>
+          </td>
+          <td>
+            <span class="io-stat">R: {{ (m.diskReadBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+            <span class="io-stat">W: {{ (m.diskWriteBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+          </td>
+          <td>
+            <span class="io-stat">Rx: {{ (m.networkRxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+            <span class="io-stat">Tx: {{ (m.networkTxBytesSec / 1024) | number:'1.0-0' }} KB/s</span>
+          </td>
+          <td>
+            <span class="badge-workload-count">{{ m.activeWorkloadCount }} workloads</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
