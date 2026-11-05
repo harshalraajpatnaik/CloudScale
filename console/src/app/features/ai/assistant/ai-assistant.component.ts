@@ -261,7 +261,8 @@ export class AiAssistantComponent implements OnInit {
 
     return points.map((p, idx) => {
       const x = padding + idx * stepX;
-      const y = height - padding - (Math.min(100, Math.max(0, p.forecastedUtilization)) / 100) * (height - 2 * padding);
+      const val = p.forecastedUtilization ?? (p as any).predictedValue ?? 50;
+      const y = height - padding - (Math.min(100, Math.max(0, val)) / 100) * (height - 2 * padding);
       return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(' ');
   }
@@ -280,7 +281,8 @@ export class AiAssistantComponent implements OnInit {
     // Upper boundary
     const upperPoints = points.map((p, idx) => {
       const x = padding + idx * stepX;
-      const y = height - padding - (Math.min(100, Math.max(0, p.upperConfidence)) / 100) * (height - 2 * padding);
+      const val = p.upperConfidence ?? (p as any).confidenceUpper ?? 60;
+      const y = height - padding - (Math.min(100, Math.max(0, val)) / 100) * (height - 2 * padding);
       return `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(' ');
 
@@ -288,7 +290,8 @@ export class AiAssistantComponent implements OnInit {
     const lowerPoints = [...points].reverse().map((p, revIdx) => {
       const idx = points.length - 1 - revIdx;
       const x = padding + idx * stepX;
-      const y = height - padding - (Math.min(100, Math.max(0, p.lowerConfidence)) / 100) * (height - 2 * padding);
+      const val = p.lowerConfidence ?? (p as any).confidenceLower ?? 40;
+      const y = height - padding - (Math.min(100, Math.max(0, val)) / 100) * (height - 2 * padding);
       return `L ${x.toFixed(1)} ${y.toFixed(1)}`;
     }).join(' ');
 
