@@ -30,13 +30,15 @@ export class IncidentBoardComponent implements OnInit {
 
   fetchAlerts(): void {
     this.isLoading.set(true);
+    this.errorMessage.set(null);
     this.alertService.listAlerts(this.selectedStatus()).subscribe({
       next: (data) => {
         this.alerts.set(data || []);
         this.isLoading.set(false);
       },
       error: (err) => {
-        this.errorMessage.set(err?.error?.error || 'Failed to load alerts.');
+        const msg = err?.error?.error?.message || err?.error?.message || 'Failed to load alerts.';
+        this.errorMessage.set(msg);
         this.isLoading.set(false);
       }
     });
@@ -57,12 +59,17 @@ export class IncidentBoardComponent implements OnInit {
   resolveAlert(alert: Alert): void {
     this.alertService.resolveAlert(alert.id).subscribe({
       next: (resolved) => {
-        this.alerts.update(list => list.map(a => a.id === resolved.id ? resolved : a));
+        if (this.selectedStatus() === 'ACTIVE') {
+          this.alerts.update(list => list.filter(a => a.id !== resolved.id));
+        } else {
+          this.alerts.update(list => list.map(a => a.id === resolved.id ? resolved : a));
+        }
         this.toastService.success(`Incident '${alert.alertType}' successfully marked as RESOLVED.`);
         this.fetchMetrics();
       },
       error: (err) => {
-        this.toastService.error(err?.error?.error || 'Failed to resolve alert.');
+        const msg = err?.error?.error?.message || err?.error?.message || 'Failed to resolve alert.';
+        this.toastService.error(msg);
       }
     });
   }
@@ -74,12 +81,15 @@ export class IncidentBoardComponent implements OnInit {
       message: 'Compute node CPU core saturation exceeded 95% threshold for >3 consecutive evaluation windows.'
     }).subscribe({
       next: (alert) => {
-        this.alerts.update(list => [alert, ...list]);
+        if (this.selectedStatus() !== 'RESOLVED') {
+          this.alerts.update(list => [alert, ...list]);
+        }
         this.toastService.info('Simulated incident alert triggered.');
         this.fetchMetrics();
       },
       error: (err) => {
-        this.toastService.error(err?.error?.error || 'Failed to trigger simulated alert.');
+        const msg = err?.error?.error?.message || err?.error?.message || 'Failed to trigger simulated alert.';
+        this.toastService.error(msg);
       }
     });
   }

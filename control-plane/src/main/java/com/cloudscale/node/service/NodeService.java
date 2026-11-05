@@ -113,13 +113,26 @@ public class NodeService {
     @Scheduled(fixedDelay = 30000)
     @Transactional
     public void detectUnreachableNodes() {
+        // Physical nodes: detect heartbeat timeouts (only non-simulated nodes)
         Instant threshold = Instant.now().minus(HEARTBEAT_TIMEOUT_SECONDS, ChronoUnit.SECONDS);
         List<Node> staleNodes = nodeRepository.findStaleActiveNodes(threshold);
 
         for (Node node : staleNodes) {
-            log.warn("Node {} heartbeat timed out (>{}s). Marking UNREACHABLE.", node.getHostname(), HEARTBEAT_TIMEOUT_SECONDS);
+            log.warn("Physical host {} heartbeat timed out (>{}s). Marking UNREACHABLE.", node.getHostname(), HEARTBEAT_TIMEOUT_SECONDS);
             node.setStatus(NodeStatus.UNREACHABLE);
             nodeRepository.save(node);
+        }
+
+        // Simulated nodes: keep heartbeats fresh and automatically restore if previously marked unreachable
+        List<Node> simulatedNodes = nodeRepository.findSimulatedNodes();
+        Instant now = Instant.now();
+        for (Node simNode : simulatedNodes) {
+            if (simNode.getStatus() == NodeStatus.UNREACHABLE) {
+                simNode.setStatus(NodeStatus.ACTIVE);
+                log.info("Simulated host {} restored to ACTIVE state.", simNode.getHostname());
+            }
+            simNode.setLastHeartbeat(now);
+            nodeRepository.save(simNode);
         }
     }
 }

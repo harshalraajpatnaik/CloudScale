@@ -39,7 +39,7 @@ class NodeHeartbeatFailureDetectorTest {
     void setUp() {
         String runSuffix = UUID.randomUUID().toString().substring(0, 8);
         org = organisationRepository.save(new Organisation("Heartbeat Org " + runSuffix, "heartbeat-" + runSuffix));
-        node = new Node(org, "heartbeat-worker-" + runSuffix, "10.0.1.99", 16, 32768L, true);
+        node = new Node(org, "heartbeat-worker-" + runSuffix, "10.0.1.99", 16, 32768L, false);
         node.setStatus(NodeStatus.ACTIVE);
         node.setLastHeartbeat(Instant.now());
         node = nodeRepository.save(node);

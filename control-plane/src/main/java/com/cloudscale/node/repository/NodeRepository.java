@@ -31,6 +31,9 @@ public interface NodeRepository extends JpaRepository<Node, UUID> {
     @Query("SELECT n FROM Node n WHERE n.organisation.id = :orgId AND n.status = 'ACTIVE' ORDER BY n.createdAt ASC")
     List<Node> findActiveNodesForSchedulingWithLock(@Param("orgId") UUID orgId);
 
-    @Query("SELECT n FROM Node n WHERE n.status = 'ACTIVE' AND n.lastHeartbeat < :threshold")
+    @Query("SELECT n FROM Node n WHERE n.status = 'ACTIVE' AND n.simulated = false AND n.lastHeartbeat < :threshold")
     List<Node> findStaleActiveNodes(@Param("threshold") Instant threshold);
+
+    @Query("SELECT n FROM Node n WHERE n.simulated = true")
+    List<Node> findSimulatedNodes();
 }

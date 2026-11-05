@@ -115,7 +115,7 @@ export class WorkloadListComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage.set(err.error?.message || 'Failed to submit workload');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to submit workload');
       }
     });
   }
@@ -132,7 +132,7 @@ export class WorkloadListComponent implements OnInit {
       },
       error: (err) => {
         this.schedulingWorkloadId.set(null);
-        this.errorMessage.set(err.error?.message || `Placement failed: Insufficient node capacity.`);
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || `Placement failed: Insufficient node capacity.`);
         this.fetchWorkloads();
       }
     });
@@ -145,7 +145,7 @@ export class WorkloadListComponent implements OnInit {
         this.fetchWorkloads();
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to stop workload');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to stop workload');
       }
     });
   }
@@ -153,11 +153,11 @@ export class WorkloadListComponent implements OnInit {
   restartWorkload(workload: Workload): void {
     this.workloadService.restartWorkload(workload.id).subscribe({
       next: (res) => {
-        this.showFlashMessage(`Workload '${res.data.name}' transitioned to PENDING for reschedule.`);
+        this.showFlashMessage(`Workload '${res.data.name}' restarted and scheduled onto '${res.data.assignedNodeHostname || 'optimal host'}'.`);
         this.fetchWorkloads();
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to restart workload');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to restart workload');
       }
     });
   }
@@ -169,7 +169,7 @@ export class WorkloadListComponent implements OnInit {
         this.fetchWorkloads();
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.message || 'Failed to suspend workload');
+        this.errorMessage.set(err.error?.error?.message || err.error?.message || 'Failed to suspend workload');
       }
     });
   }
