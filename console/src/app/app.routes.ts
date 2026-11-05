@@ -36,6 +36,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/autoscaling/policies/autoscaling-policies.component').then(m => m.AutoscalingPoliciesComponent)
   },
   {
+    path: 'ai-assistant',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/ai/assistant/ai-assistant.component').then(m => m.AiAssistantComponent)
+  },
+  {
     path: 'health',
     loadComponent: () => import('./features/health/health.component').then(m => m.HealthComponent)
   },

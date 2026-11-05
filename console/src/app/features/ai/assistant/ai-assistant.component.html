@@ -1,0 +1,318 @@
+<div class="ai-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>CloudScale Intelligence</h1>
+        <span class="badge gemini-badge">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+          </svg>
+          Google Gemini (gemini-3.5-flash-lite)
+        </span>
+        <span class="badge ground-badge">Grounded in Live Cluster Telemetry</span>
+      </div>
+      <p class="subtitle">AI-assisted infrastructure reasoning, multivariate capacity forecasting, and automated rightsizing recommendations.</p>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="ai-tabs">
+    <button [class.active]="activeTab() === 'chat'" (click)="setTab('chat')">
+      💬 Infrastructure Assistant
+    </button>
+    <button [class.active]="activeTab() === 'recommendations'" (click)="setTab('recommendations')">
+      ⚡ AI Recommendations
+      <span class="tab-count" *ngIf="recommendations().length > 0">{{ recommendations().length }}</span>
+    </button>
+    <button [class.active]="activeTab() === 'forecasting'" (click)="setTab('forecasting')">
+      📈 Capacity Forecasting (ML)
+    </button>
+    <button [class.active]="activeTab() === 'diagnostics'" (click)="setTab('diagnostics')">
+      🔍 Incident Diagnostics
+    </button>
+  </nav>
+
+  <!-- Error and Success Banners -->
+  <div *ngIf="errorMessage()" class="alert alert-danger">
+    <span>⚠️ {{ errorMessage() }}</span>
+  </div>
+  <div *ngIf="recSuccessMessage()" class="alert alert-success">
+    <span>✅ {{ recSuccessMessage() }}</span>
+  </div>
+
+  <!-- TAB 1: INTERACTIVE CHAT -->
+  <section *ngIf="activeTab() === 'chat'" class="tab-content chat-section">
+    <div class="chat-card">
+      <div class="chat-history">
+        <div *ngFor="let msg of messages()" class="message-row" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+          <div class="avatar">
+            <span *ngIf="msg.role === 'assistant'">🤖</span>
+            <span *ngIf="msg.role === 'user'">👤</span>
+          </div>
+          <div class="message-bubble">
+            <div class="message-header">
+              <span class="sender-name">{{ msg.role === 'assistant' ? 'Gemini 3.5 Flash Lite' : 'Operator' }}</span>
+              <span class="message-time">{{ msg.timestamp | date:'shortTime' }}</span>
+            </div>
+            <div class="message-body">{{ msg.content }}</div>
+          </div>
+        </div>
+
+        <div *ngIf="isChatLoading()" class="message-row assistant loading-row">
+          <div class="avatar">🤖</div>
+          <div class="message-bubble thinking">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="thinking-text">Gemini is analyzing cluster topology and metrics...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick prompts -->
+      <div class="quick-prompts-bar">
+        <span class="quick-label">Suggested Prompts:</span>
+        <button *ngFor="let prompt of quickPrompts" class="prompt-chip" (click)="applyQuickPrompt(prompt)">
+          {{ prompt }}
+        </button>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="chat-input-container">
+        <input
+          type="text"
+          placeholder="Ask Gemini about cluster saturation, workload placement, or diurnal scaling patterns..."
+          [ngModel]="userInput()"
+          (ngModelChange)="userInput.set($event)"
+          (keyup.enter)="sendChat()"
+          [disabled]="isChatLoading()"
+        />
+        <button class="btn btn-primary send-btn" (click)="sendChat()" [disabled]="!userInput().trim() || isChatLoading()">
+          <span>Send</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: AI RECOMMENDATIONS -->
+  <section *ngIf="activeTab() === 'recommendations'" class="tab-content recommendations-section">
+    <div class="action-bar">
+      <div>
+        <h2>Cluster Optimization Recommendations</h2>
+        <p class="section-desc">Autonomous suggestions evaluated by Machine Learning models against telemetry thresholds.</p>
+      </div>
+      <button class="btn btn-primary" (click)="scanAndGenerateRecommendations()" [disabled]="isRecsLoading()">
+        <span *ngIf="isRecsLoading()">Scanning Cluster...</span>
+        <span *ngIf="!isRecsLoading()">⚡ Scan & Generate Recommendations</span>
+      </button>
+    </div>
+
+    <div *ngIf="recommendations().length === 0 && !isRecsLoading()" class="empty-state">
+      <div class="empty-icon">💡</div>
+      <h3>No Recommendations Generated Yet</h3>
+      <p>Click "Scan & Generate Recommendations" to evaluate active workload placement and node density.</p>
+    </div>
+
+    <div class="recommendations-grid" *ngIf="recommendations().length > 0">
+      <div *ngFor="let rec of recommendations()" class="rec-card" [class.approved]="rec.approvalStatus === 'APPROVED'" [class.rejected]="rec.approvalStatus === 'REJECTED'">
+        <div class="rec-header">
+          <div class="rec-category-wrap">
+            <span class="category-pill">{{ rec.category }}</span>
+            <span class="confidence-pill" [class.high-confidence]="rec.confidenceScore >= 0.8">
+              {{ (rec.confidenceScore * 100).toFixed(0) }}% Confidence
+            </span>
+          </div>
+          <span class="status-pill status-{{ rec.approvalStatus.toLowerCase() }}">{{ rec.approvalStatus }}</span>
+        </div>
+
+        <h3 class="rec-title">{{ rec.suggestedAction }}</h3>
+        <p class="rec-explanation">{{ rec.explanation }}</p>
+
+        <div class="rec-impact-box">
+          <span class="impact-label">Expected Impact:</span>
+          <span class="impact-value">{{ rec.expectedImpact }}</span>
+        </div>
+
+        <div class="rec-footer" *ngIf="rec.approvalStatus === 'PENDING'">
+          <button class="btn btn-approve" (click)="approveRec(rec)">
+            ✓ Approve Action
+          </button>
+          <button class="btn btn-reject" (click)="rejectRec(rec)">
+            ✕ Reject
+          </button>
+        </div>
+
+        <div class="rec-footer completed-footer" *ngIf="rec.approvalStatus !== 'PENDING'">
+          <span class="status-message">
+            Operator decision recorded: <strong>{{ rec.approvalStatus }}</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: CAPACITY FORECASTING -->
+  <section *ngIf="activeTab() === 'forecasting'" class="tab-content forecasting-section">
+    <div class="forecast-controls-card">
+      <div class="control-group">
+        <label>Target Host Node:</label>
+        <select (change)="onNodeSelected($event)" [disabled]="isForecastLoading()">
+          <option *ngFor="let node of nodes()" [value]="node.id" [selected]="node.id === selectedNodeId()">
+            {{ node.hostname }} ({{ node.totalCpuCores }} Cores, {{ node.totalMemoryMb }} MB)
+          </option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>History Window:</label>
+        <select (change)="onDurationChange($event)" [disabled]="isForecastLoading()">
+          <option value="30">Past 30 Minutes</option>
+          <option value="60" selected>Past 60 Minutes</option>
+          <option value="120">Past 2 Hours</option>
+        </select>
+      </div>
+
+      <button class="btn btn-secondary" (click)="generateForecast()" [disabled]="isForecastLoading()">
+        <span *ngIf="isForecastLoading()">Computing Models...</span>
+        <span *ngIf="!isForecastLoading()">🔄 Re-evaluate Forecast</span>
+      </button>
+    </div>
+
+    <!-- Model Tournament Leaderboard -->
+    <div class="leaderboard-card" *ngIf="forecastData()">
+      <h3>🏆 Model Evaluation Tournament</h3>
+      <p class="tournament-desc">Multiple time-series algorithms benchmarked in real-time. The lowest MAE & RMSE winner is selected for projection.</p>
+
+      <div class="model-cards-row">
+        <div *ngFor="let m of forecastData()?.evaluatedModels" class="model-badge-card" [class.selected-winner]="m.model === forecastData()?.selectedModel">
+          <div class="model-header">
+            <span class="model-name">{{ m.model }}</span>
+            <span class="winner-pill" *ngIf="m.model === forecastData()?.selectedModel">★ SELECTED</span>
+          </div>
+          <div class="model-scores">
+            <div><span class="score-label">MAE:</span> <strong>{{ m.mae.toFixed(2) }}%</strong></div>
+            <div><span class="score-label">RMSE:</span> <strong>{{ m.rmse.toFixed(2) }}%</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forecast SVG Trajectory Visualization -->
+    <div class="chart-card" *ngIf="forecastData() && forecastData()!.forecast.length > 0">
+      <div class="chart-header">
+        <h4>Predicted CPU Utilization Horizon ({{ forecastData()?.forecastHorizonMinutes }} Min Projection)</h4>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-color forecast-color"></span> Projected Trajectory</span>
+          <span class="legend-item"><span class="legend-color corridor-color"></span> 95% Confidence Corridor</span>
+        </div>
+      </div>
+
+      <div class="svg-container">
+        <svg viewBox="0 0 800 240" class="forecast-svg">
+          <!-- Grid lines -->
+          <line x1="20" y1="20" x2="780" y2="20" stroke="#334155" stroke-dasharray="3,3" />
+          <text x="5" y="25" fill="#64748b" font-size="10">100%</text>
+
+          <line x1="20" y1="75" x2="780" y2="75" stroke="#334155" stroke-dasharray="3,3" />
+          <text x="5" y="80" fill="#64748b" font-size="10">75%</text>
+
+          <line x1="20" y1="130" x2="780" y2="130" stroke="#334155" stroke-dasharray="3,3" />
+          <text x="5" y="135" fill="#64748b" font-size="10">50%</text>
+
+          <line x1="20" y1="185" x2="780" y2="185" stroke="#334155" stroke-dasharray="3,3" />
+          <text x="5" y="190" fill="#64748b" font-size="10">25%</text>
+
+          <line x1="20" y1="220" x2="780" y2="220" stroke="#475569" />
+          <text x="5" y="225" fill="#64748b" font-size="10">0%</text>
+
+          <!-- Confidence Corridor Polygon -->
+          <path [attr.d]="getConfidenceCorridorSvgPath()" fill="rgba(56, 189, 248, 0.15)" />
+
+          <!-- Forecast Trajectory Line -->
+          <path [attr.d]="getForecastSvgPath()" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4,4" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: INCIDENT DIAGNOSTICS -->
+  <section *ngIf="activeTab() === 'diagnostics'" class="tab-content diagnostics-section">
+    <div class="diagnostics-launcher-card">
+      <div class="launcher-intro">
+        <h2>Simulated Incident Diagnostics</h2>
+        <p>Trigger an infrastructure incident scenario to observe Gemini's root cause analysis and automated remediation suggestions.</p>
+      </div>
+
+      <div class="incident-selector-row">
+        <label class="scenario-option" [class.selected]="incidentType() === 'CPU_SATURATION'">
+          <input type="radio" name="incidentType" value="CPU_SATURATION" [checked]="incidentType() === 'CPU_SATURATION'" (change)="incidentType.set('CPU_SATURATION')"/>
+          <div class="scenario-details">
+            <span class="scenario-title">Compute Host Saturation (94% CPU)</span>
+            <span class="scenario-desc">Sudden workload burst exceeds node core capacity.</span>
+          </div>
+        </label>
+
+        <label class="scenario-option" [class.selected]="incidentType() === 'MEMORY_LEAK'">
+          <input type="radio" name="incidentType" value="MEMORY_LEAK" [checked]="incidentType() === 'MEMORY_LEAK'" (change)="incidentType.set('MEMORY_LEAK')"/>
+          <div class="scenario-details">
+            <span class="scenario-title">Host Memory Leak (96% RAM)</span>
+            <span class="scenario-desc">Gradual memory exhaustion approaching OOM-killer.</span>
+          </div>
+        </label>
+
+        <label class="scenario-option" [class.selected]="incidentType() === 'FAILING_WORKLOAD'">
+          <input type="radio" name="incidentType" value="FAILING_WORKLOAD" [checked]="incidentType() === 'FAILING_WORKLOAD'" (change)="incidentType.set('FAILING_WORKLOAD')"/>
+          <div class="scenario-details">
+            <span class="scenario-title">Cascading Workload Failures</span>
+            <span class="scenario-desc">Multiple workloads entering crash loop on same host.</span>
+          </div>
+        </label>
+      </div>
+
+      <button class="btn btn-primary diagnose-btn" (click)="runDiagnosis()" [disabled]="isDiagnosing()">
+        <span *ngIf="isDiagnosing()">Gemini is Diagnosing Incident...</span>
+        <span *ngIf="!isDiagnosing()">🔍 Analyze Incident with Gemini</span>
+      </button>
+    </div>
+
+    <!-- Diagnostic Report Output -->
+    <div class="report-card" *ngIf="diagnosticsResult()">
+      <div class="report-header">
+        <div class="report-title-wrap">
+          <span class="severity-badge severity-{{ diagnosticsResult()?.severity?.toLowerCase() }}">
+            {{ diagnosticsResult()?.severity }}
+          </span>
+          <h3>{{ diagnosticsResult()?.title }}</h3>
+        </div>
+        <span class="confidence-tag">Gemini Confidence: {{ ((diagnosticsResult()?.confidenceScore || 0.85) * 100).toFixed(0) }}%</span>
+      </div>
+
+      <div class="report-body">
+        <div class="report-section">
+          <span class="section-label">Root Cause Analysis:</span>
+          <p class="root-cause-text">{{ diagnosticsResult()?.rootCause }}</p>
+        </div>
+
+        <div class="report-section">
+          <span class="section-label">Affected Infrastructure Components:</span>
+          <div class="components-row">
+            <span *ngFor="let comp of diagnosticsResult()?.affectedComponents" class="component-pill">
+              🖥️ {{ comp }}
+            </span>
+          </div>
+        </div>
+
+        <div class="report-section">
+          <span class="section-label">Automated Remediation Playbook:</span>
+          <ol class="remediation-list">
+            <li *ngFor="let step of diagnosticsResult()?.remediationSteps">{{ step }}</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
