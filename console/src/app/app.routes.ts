@@ -60,6 +60,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/health/health.component').then(m => m.HealthComponent)
   },
   {
+    path: 'guide',
+    loadComponent: () => import('./features/guide/platform-guide.component').then(m => m.PlatformGuideComponent)
+  },
+  {
     path: '**',
     redirectTo: 'nodes'
   }

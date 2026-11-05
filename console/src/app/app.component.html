@@ -1,30 +1,81 @@
 <div class="cloudscale-layout">
   <!-- Top Navigation Bar -->
   <header class="navbar">
+    <!-- Brand Identity -->
     <div class="navbar-brand">
       <a routerLink="/" class="brand-link">
         <div class="brand-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M19 18H6C4.34315 18 3 16.6569 3 15C3 13.5789 3.98595 12.3887 5.32759 12.0835C5.11582 11.4393 5 10.7381 5 10C5 6.68629 7.68629 4 11 4C13.637 4 15.8675 5.70327 16.6577 8.08342C17.0722 8.02867 17.5197 8 18 8C20.7614 8 23 10.2386 23 13C23 15.7614 20.7614 18 18 18H19Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <span class="brand-name">CloudScale</span>
       </a>
-      <span class="badge-env">CONTROL PLANE</span>
-
-      <nav class="nav-links">
-        <a *ngIf="authService.isAuthenticated()" routerLink="/nodes" routerLinkActive="active" class="nav-link">Compute Nodes</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/workloads" routerLinkActive="active" class="nav-link">Workloads</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/metrics" routerLinkActive="active" class="nav-link">Metrics & Telemetry</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/autoscaling" routerLinkActive="active" class="nav-link">Autoscaling</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/ai-assistant" routerLinkActive="active" class="nav-link">AI Intelligence</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/cost" routerLinkActive="active" class="nav-link">Cost & FinOps</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/incidents" routerLinkActive="active" class="nav-link">Incidents</a>
-        <a *ngIf="authService.isAuthenticated()" routerLink="/audit" routerLinkActive="active" class="nav-link">Audit Logs</a>
-        <a routerLink="/health" routerLinkActive="active" class="nav-link">System Health</a>
-      </nav>
+      <span class="badge-env" title="Production Cluster Control Plane">PROD</span>
     </div>
 
+    <!-- Central Decluttered Navigation Bar -->
+    <nav class="navbar-nav">
+      <div class="nav-scroll-container">
+        <!-- Infrastructure Cluster -->
+        <ng-container *ngIf="authService.isAuthenticated()">
+          <a routerLink="/nodes" routerLinkActive="active" class="nav-tab" title="Compute Nodes Registry & Fleet Health">
+            <span class="tab-icon">🖥️</span>
+            <span class="tab-label">Nodes</span>
+          </a>
+          <a routerLink="/workloads" routerLinkActive="active" class="nav-tab" title="Container Workloads & Scheduling Algorithms">
+            <span class="tab-icon">⚡</span>
+            <span class="tab-label">Workloads</span>
+          </a>
+          <a routerLink="/metrics" routerLinkActive="active" class="nav-tab" title="Real-Time Streaming Telemetry">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">Metrics</span>
+          </a>
+
+          <div class="nav-divider" role="separator" aria-orientation="vertical"></div>
+
+          <!-- Intelligence & Scaling Cluster -->
+          <a routerLink="/autoscaling" routerLinkActive="active" class="nav-tab" title="Horizontal Autoscaling Policies & Simulator">
+            <span class="tab-icon">🔄</span>
+            <span class="tab-label">Autoscaling</span>
+          </a>
+          <a routerLink="/ai-assistant" routerLinkActive="active" class="nav-tab" title="Gemini AI Assistant & Root Cause Analysis">
+            <span class="tab-icon">✨</span>
+            <span class="tab-label">AI Assistant</span>
+          </a>
+          <a routerLink="/cost" routerLinkActive="active" class="nav-tab" title="FinOps Cloud Cost & Waste Analysis">
+            <span class="tab-icon">💰</span>
+            <span class="tab-label">FinOps</span>
+          </a>
+
+          <div class="nav-divider" role="separator" aria-orientation="vertical"></div>
+
+          <!-- SRE & Governance Cluster -->
+          <a routerLink="/incidents" routerLinkActive="active" class="nav-tab" title="Cluster Incidents & Alerts Board">
+            <span class="tab-icon">🚨</span>
+            <span class="tab-label">Incidents</span>
+          </a>
+          <a routerLink="/audit" routerLinkActive="active" class="nav-tab" title="Tamper-Evident Governance Audit Trail">
+            <span class="tab-icon">📜</span>
+            <span class="tab-label">Audit Logs</span>
+          </a>
+        </ng-container>
+
+        <div class="nav-divider" *ngIf="authService.isAuthenticated()" role="separator" aria-orientation="vertical"></div>
+
+        <!-- Global Resources (Always Visible) -->
+        <a routerLink="/guide" routerLinkActive="active" class="nav-tab tab-guide" title="Platform Guide: What each functionality does and why to use it">
+          <span class="tab-icon">📖</span>
+          <span class="tab-label">How to Use</span>
+        </a>
+        <a routerLink="/health" routerLinkActive="active" class="nav-tab tab-health" title="System Health & Multi-Tier Probes">
+          <span class="health-pulse-dot"></span>
+          <span class="tab-label">Health</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- User & Session Actions -->
     <div class="navbar-actions">
       <!-- Unauthenticated Menu -->
       <ng-container *ngIf="!authService.isAuthenticated()">
@@ -34,13 +85,17 @@
 
       <!-- Authenticated User Menu -->
       <ng-container *ngIf="authService.isAuthenticated()">
-        <div class="user-badge-container">
-          <span class="org-name">{{ authService.currentOrg()?.name }}</span>
-          <span class="divider">/</span>
-          <span class="user-name">{{ authService.currentUser()?.fullName }}</span>
+        <div class="user-chip" [title]="'Logged in as ' + (authService.currentUser()?.fullName || 'User') + ' (' + (authService.currentOrg()?.name || 'Organization') + ')'">
+          <div class="user-avatar">
+            {{ (authService.currentUser()?.fullName || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-info-text">
+            <span class="user-name">{{ authService.currentUser()?.fullName }}</span>
+            <span class="org-subtext">{{ authService.currentOrg()?.name }}</span>
+          </div>
           <span class="role-pill">{{ authService.userRole() }}</span>
         </div>
-        <button class="btn-logout" (click)="logout()" aria-label="Sign out">
+        <button class="btn-logout" (click)="logout()" title="Sign out of CloudScale" aria-label="Sign out">
           Sign Out
         </button>
       </ng-container>

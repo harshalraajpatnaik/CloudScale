@@ -1,60 +1,125 @@
-<div class="auth-card-wrapper">
-  <div class="auth-card">
-    <div class="auth-header">
-      <div class="logo-box">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 18H6C4.34315 18 3 16.6569 3 15C3 13.5789 3.98595 12.3887 5.32759 12.0835C5.11582 11.4393 5 10.7381 5 10C5 6.68629 7.68629 4 11 4C13.637 4 15.8675 5.70327 16.6577 8.08342C17.0722 8.02867 17.5197 8 18 8C20.7614 8 23 10.2386 23 13C23 15.7614 20.7614 18 18 18H19Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <h2>Sign in to CloudScale</h2>
-      <p class="subtitle">Access your cloud control plane and infrastructure telemetry</p>
+<div class="auth-page-container">
+  <!-- Left Side: Platform Capabilities Tour & Overview -->
+  <aside class="auth-showcase">
+    <div class="showcase-badge">
+      <span>🚀 CLOUD INFRASTRUCTURE ORCHESTRATION</span>
     </div>
 
-    <div *ngIf="errorMessage()" class="alert-error" role="alert">
-      {{ errorMessage() }}
-    </div>
+    <h1 class="showcase-title">Intelligent Cloud Management with Real-Time SRE Control</h1>
+    <p class="showcase-desc">
+      Explore deterministic workload placement, sub-second telemetry ingestion, automated horizontal autoscaling, and Google Gemini AI assistance before signing in.
+    </p>
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
-      <div class="form-group">
-        <label for="email">Work Email</label>
-        <input
-          id="email"
-          type="email"
-          formControlName="email"
-          placeholder="name@company.com"
-          [class.invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid"
-        />
-        <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('required')" class="validation-msg">
-          Email is required
-        </span>
-        <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('email')" class="validation-msg">
-          Enter a valid email address
-        </span>
+    <!-- 4 Feature Cards -->
+    <div class="showcase-grid">
+      <div class="showcase-card">
+        <div class="sc-icon">🖥️</div>
+        <div class="sc-content">
+          <h4>Fleet & Compute Nodes</h4>
+          <p>Track hardware saturation, manage host maintenance, and safely drain compute nodes.</p>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input
-          id="password"
-          type="password"
-          formControlName="password"
-          placeholder="••••••••"
-          [class.invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
-        />
-        <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.hasError('required')" class="validation-msg">
-          Password is required
-        </span>
+      <div class="showcase-card">
+        <div class="sc-icon">⚡</div>
+        <div class="sc-content">
+          <h4>4 Placement Algorithms</h4>
+          <p>Resource-Aware, Best-Fit, First-Fit, and Priority scheduling backed by Redis distributed locks.</p>
+        </div>
       </div>
 
-      <button type="submit" class="btn-submit" [disabled]="isLoading() || loginForm.invalid">
-        <span *ngIf="!isLoading()">Sign In</span>
-        <span *ngIf="isLoading()">Authenticating...</span>
-      </button>
-    </form>
+      <div class="showcase-card">
+        <div class="sc-icon">✨</div>
+        <div class="sc-content">
+          <h4>Gemini AI Operations</h4>
+          <p>Live cluster queries, automated rightsizing recommendations, and root-cause incident diagnostics.</p>
+        </div>
+      </div>
 
-    <div class="auth-footer">
-      <span>Need an organization account?</span>
-      <a routerLink="/register" class="link-action">Register organization</a>
+      <div class="showcase-card">
+        <div class="sc-icon">🔄</div>
+        <div class="sc-content">
+          <h4>Autoscaling & FinOps</h4>
+          <p>Cooldown-damped replica scaling combined with real-time cloud burn rate and waste analysis.</p>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- CTA to Platform Guide -->
+    <div class="showcase-cta">
+      <a routerLink="/guide" class="btn-guide-cta">
+        <span>📖 Read Complete Platform & Feature Guide</span>
+        <span class="cta-arrow">→</span>
+      </a>
+      <span class="cta-hint">Explore what every button, algorithm, and tab does before logging in.</span>
+    </div>
+  </aside>
+
+  <!-- Right Side: Sign-In Card -->
+  <main class="auth-card-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-box">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 18H6C4.34315 18 3 16.6569 3 15C3 13.5789 3.98595 12.3887 5.32759 12.0835C5.11582 11.4393 5 10.7381 5 10C5 6.68629 7.68629 4 11 4C13.637 4 15.8675 5.70327 16.6577 8.08342C17.0722 8.02867 17.5197 8 18 8C20.7614 8 23 10.2386 23 13C23 15.7614 20.7614 18 18 18H19Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>Sign in to CloudScale</h2>
+        <p class="subtitle">Access your cloud control plane and infrastructure telemetry</p>
+      </div>
+
+      <div *ngIf="errorMessage()" class="alert-error" role="alert">
+        {{ errorMessage() }}
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="email">Work Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="name@company.com"
+            [class.invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid"
+          />
+          <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('required')" class="validation-msg">
+            Email is required
+          </span>
+          <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('email')" class="validation-msg">
+            Enter a valid email address
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            placeholder="••••••••"
+            [class.invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+          />
+          <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.hasError('required')" class="validation-msg">
+            Password is required
+          </span>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="isLoading() || loginForm.invalid">
+          <span *ngIf="!isLoading()">Sign In</span>
+          <span *ngIf="isLoading()">Authenticating...</span>
+        </button>
+      </form>
+
+      <!-- Guide quick link in login card -->
+      <div class="login-guide-link">
+        <span>💡 New to the platform?</span>
+        <a routerLink="/guide" class="guide-text-link">Explore How to Use & Capabilities →</a>
+      </div>
+
+      <div class="auth-footer">
+        <span>Need an organization account?</span>
+        <a routerLink="/register" class="link-action">Register organization</a>
+      </div>
+    </div>
+  </main>
 </div>

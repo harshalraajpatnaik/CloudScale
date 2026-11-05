@@ -1,0 +1,155 @@
+<div class="guide-container">
+  <!-- Hero Section -->
+  <header class="guide-hero">
+    <div class="hero-badge">
+      <span class="badge-icon">📖</span>
+      <span>PLATFORM ARCHITECTURE & USER MANUAL</span>
+    </div>
+    <h1 class="hero-title">CloudScale Interactive Operations Guide</h1>
+    <p class="hero-subtitle">
+      Comprehensive documentation of every tab, button, scheduling algorithm, and AI capability in CloudScale. 
+      Understand what each feature does, why to use it, and how to operate your cluster in production.
+    </p>
+
+    <!-- Search & Filter Controls -->
+    <div class="controls-panel">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()" 
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Search features, buttons (e.g., 'Drain', 'Algorithms', 'Gemini', 'Autoscaling')..." 
+          class="search-input"
+        />
+        <button *ngIf="searchQuery()" (click)="searchQuery.set('')" class="search-clear">✕</button>
+      </div>
+
+      <div class="category-pills">
+        <button 
+          *ngFor="let cat of categories"
+          class="cat-pill"
+          [class.active]="selectedCategory() === cat.id"
+          (click)="setCategory(cat.id)"
+        >
+          {{ cat.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Jump Table of Contents -->
+    <div class="quick-jump-bar" *ngIf="!searchQuery()">
+      <span class="jump-label">Quick Jump:</span>
+      <div class="jump-links">
+        <button 
+          *ngFor="let sec of sections"
+          (click)="scrollToSection(sec.id)"
+          class="jump-pill"
+        >
+          <span class="jump-icon">{{ sec.icon }}</span>
+          <span>{{ sec.title }}</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content Section List -->
+  <div class="sections-list">
+    <div *ngIf="filteredSections().length === 0" class="empty-results">
+      <div class="empty-icon">🔎</div>
+      <h3>No matching features found</h3>
+      <p>Try searching for "Schedule", "Nodes", "Forecast", or clear your filter.</p>
+      <button class="btn-reset" (click)="searchQuery.set(''); selectedCategory.set('all')">Reset Filters</button>
+    </div>
+
+    <article *ngFor="let sec of filteredSections()" [id]="sec.id" class="guide-card">
+      <!-- Card Header -->
+      <div class="card-header">
+        <div class="header-left">
+          <div class="module-icon">{{ sec.icon }}</div>
+          <div>
+            <div class="title-row">
+              <h2 class="module-title">{{ sec.title }}</h2>
+              <span class="module-badge">{{ sec.badge }}</span>
+              <span class="route-tag">Route: <code>{{ sec.route }}</code></span>
+            </div>
+            <p class="module-summary">{{ sec.summary }}</p>
+          </div>
+        </div>
+        <div class="header-right">
+          <a [routerLink]="sec.route" class="btn-open-feature">
+            Open {{ sec.title }} →
+          </a>
+        </div>
+      </div>
+
+      <!-- Card Body Grid -->
+      <div class="card-body">
+        <!-- Why Use It & Value Proposition -->
+        <div class="info-block why-block">
+          <h3 class="block-title">
+            <span class="block-icon">🎯</span>
+            Why & When to Use It
+          </h3>
+          <p class="block-text">{{ sec.whyUse }}</p>
+        </div>
+
+        <!-- What It Does (Core Capabilities) -->
+        <div class="info-block capabilities-block">
+          <h3 class="block-title">
+            <span class="block-icon">⚙️</span>
+            What Each Functionality Does
+          </h3>
+          <ul class="feature-bullets">
+            <li *ngFor="let feat of sec.whatItDoes">
+              <span class="bullet-check">✓</span>
+              <span>{{ feat }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Buttons and Controls Reference -->
+        <div class="info-block controls-block">
+          <h3 class="block-title">
+            <span class="block-icon">🎛️</span>
+            Buttons & Interactive Controls Reference
+          </h3>
+          <div class="controls-grid">
+            <div *ngFor="let btn of sec.buttonsAndControls" class="control-item">
+              <div class="control-name-badge">
+                <code>{{ btn.name }}</code>
+              </div>
+              <div class="control-details">
+                <p class="control-action">{{ btn.action }}</p>
+                <span class="control-tooltip">💡 {{ btn.tooltip }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-World Scenario -->
+        <div class="info-block scenario-block">
+          <h3 class="block-title">
+            <span class="block-icon">💡</span>
+            Practical Production Scenario
+          </h3>
+          <p class="scenario-text">{{ sec.scenario }}</p>
+        </div>
+
+        <!-- Best Practices & SRE Advice -->
+        <div class="info-block best-practices-block">
+          <h3 class="block-title">
+            <span class="block-icon">🛡️</span>
+            Production Best Practices
+          </h3>
+          <ul class="best-practice-list">
+            <li *ngFor="let bp of sec.bestPractices">
+              <span class="bp-icon">📌</span>
+              <span>{{ bp }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
