@@ -183,7 +183,78 @@
 .main-content {
   flex: 1;
   padding: 2rem 1.5rem;
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
   width: 100%;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+
+  .toast-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    animation: slideIn 0.25s ease-out;
+
+    .toast-icon {
+      font-size: 16px;
+    }
+
+    .toast-text {
+      flex: 1;
+      font-size: 13px;
+      color: #f1f5f9;
+      line-height: 1.4;
+    }
+
+    .toast-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 4px;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+
+    &.toast-success {
+      border-left: 4px solid #10b981;
+    }
+
+    &.toast-error {
+      border-left: 4px solid #ef4444;
+    }
+
+    &.toast-info {
+      border-left: 4px solid #38bdf8;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }

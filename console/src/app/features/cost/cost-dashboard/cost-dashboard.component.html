@@ -1,0 +1,164 @@
+<div class="cost-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Cloud Infrastructure Cost Analytics</h1>
+        <span class="badge finops-badge">FinOps Intelligence</span>
+        <span class="badge rate-badge">Reference Rates: $0.048/CPU-hr • $0.006/GB-RAM-hr</span>
+      </div>
+      <p class="subtitle">Multi-tenant spend allocation, idle capacity dollar waste tracking, and automated cost optimization.</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="fetchCostData()" [disabled]="isLoading()">
+        <span *ngIf="isLoading()">Refreshing...</span>
+        <span *ngIf="!isLoading()">🔄 Refresh Spend Data</span>
+      </button>
+      <a routerLink="/ai-assistant" class="btn btn-primary">
+        ⚡ AI Rightsizing Recommendations
+      </a>
+    </div>
+  </header>
+
+  <!-- Error Banner -->
+  <div *ngIf="errorMessage()" class="alert alert-danger">
+    <span>⚠️ {{ errorMessage() }}</span>
+  </div>
+
+  <!-- KPI Metric Cards Row -->
+  <div class="kpi-grid">
+    <div class="kpi-card highlight-card">
+      <span class="kpi-label">Projected Monthly Spend</span>
+      <div class="kpi-value">${{ summary()?.monthlyBurnRateUsd?.toFixed(2) || '0.00' }}</div>
+      <span class="kpi-sub">730-hour baseline run rate</span>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Daily Burn Rate</span>
+      <div class="kpi-value">${{ summary()?.dailyBurnRateUsd?.toFixed(2) || '0.00' }}</div>
+      <span class="kpi-sub">24-hour amortized cost</span>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Hourly Burn Rate</span>
+      <div class="kpi-value">${{ summary()?.hourlyBurnRateUsd?.toFixed(4) || '0.0000' }}</div>
+      <span class="kpi-sub">Real-time compute rate</span>
+    </div>
+
+    <div class="kpi-card waste-card" [class.has-waste]="(waste()?.monthlyWastedSpendUsd || 0) > 0">
+      <span class="kpi-label">Identified Dollar Waste</span>
+      <div class="kpi-value">${{ waste()?.monthlyWastedSpendUsd?.toFixed(2) || '0.00' }}/mo</div>
+      <span class="kpi-sub">{{ waste()?.underutilizedNodesCount || 0 }} underutilized host node(s)</span>
+    </div>
+  </div>
+
+  <!-- Waste & Optimization Recommendation Card -->
+  <div class="waste-alert-box" *ngIf="waste() && waste()!.monthlyWastedSpendUsd > 0">
+    <div class="waste-icon">💡</div>
+    <div class="waste-content">
+      <div class="waste-title-row">
+        <h3>FinOps Waste Detection: {{ waste()?.potentialSavingsPercent?.toFixed(1) }}% Potential Cloud Savings</h3>
+        <span class="idle-pill">{{ waste()?.idleCoresCount }} Idle Cores • {{ waste()?.idleMemoryGb }} GB RAM</span>
+      </div>
+      <ul class="waste-recs-list">
+        <li *ngFor="let rec of waste()?.recommendations">{{ rec }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Table View Switcher -->
+  <div class="table-controls">
+    <div class="view-tabs">
+      <button [class.active]="activeView() === 'nodes'" (click)="activeView.set('nodes')">
+        🖥️ Node Allocation Spend ({{ nodeCosts().length }})
+      </button>
+      <button [class.active]="activeView() === 'workloads'" (click)="activeView.set('workloads')">
+        📦 Workload Allocation Spend ({{ workloadCosts().length }})
+      </button>
+    </div>
+
+    <div class="search-box" *ngIf="activeView() === 'workloads'">
+      <input
+        type="text"
+        placeholder="Search workload, node, or priority..."
+        [ngModel]="searchFilter()"
+        (ngModelChange)="searchFilter.set($event)"
+      />
+    </div>
+  </div>
+
+  <!-- Table 1: Node Cost Allocation -->
+  <div class="table-card" *ngIf="activeView() === 'nodes'">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Host Node</th>
+          <th>Allocated CPU</th>
+          <th>Allocated RAM</th>
+          <th>Utilization</th>
+          <th>Hourly Cost</th>
+          <th>Monthly Projected</th>
+          <th>FinOps Health</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let node of nodeCosts()">
+          <td class="bold-cell">🖥️ {{ node.hostname }}</td>
+          <td>{{ node.allocatedCores }} / {{ node.totalCores }} Cores</td>
+          <td>{{ node.allocatedMemoryGb }} / {{ node.totalMemoryGb }} GB</td>
+          <td>
+            <div class="util-meter">
+              <div class="meter-fill" [style.width.%]="node.utilizationPercent" [class.underutilized-fill]="node.isUnderutilized"></div>
+            </div>
+            <span class="util-text">{{ node.utilizationPercent }}%</span>
+          </td>
+          <td>${{ node.hourlyCostUsd.toFixed(4) }}</td>
+          <td class="bold-cell">${{ node.monthlyCostUsd.toFixed(2) }}</td>
+          <td>
+            <span *ngIf="node.isUnderutilized" class="status-badge badge-warning">Underutilized (&lt;20%)</span>
+            <span *ngIf="!node.isUnderutilized" class="status-badge badge-success">Optimized Density</span>
+          </td>
+        </tr>
+        <tr *ngIf="nodeCosts().length === 0">
+          <td colspan="7" class="empty-cell">No registered infrastructure nodes found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Table 2: Workload Cost Allocation -->
+  <div class="table-card" *ngIf="activeView() === 'workloads'">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Workload</th>
+          <th>Assigned Host</th>
+          <th>Priority Tier</th>
+          <th>Resources</th>
+          <th>Hourly Cost</th>
+          <th>Monthly Cost</th>
+          <th>Lifecycle State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let w of filteredWorkloads()">
+          <td class="bold-cell">📦 {{ w.name }}</td>
+          <td>{{ w.assignedNode }}</td>
+          <td>
+            <span class="priority-pill priority-{{ w.priority.toLowerCase() }}">{{ w.priority }}</span>
+          </td>
+          <td>{{ w.cpuCores }} Cores • {{ w.memoryGb }} GB</td>
+          <td>${{ w.hourlyCostUsd.toFixed(4) }}</td>
+          <td class="bold-cell">${{ w.monthlyCostUsd.toFixed(2) }}</td>
+          <td>
+            <span class="state-pill state-{{ w.state.toLowerCase() }}">{{ w.state }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="filteredWorkloads().length === 0">
+          <td colspan="7" class="empty-cell">No workloads match the current filter.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

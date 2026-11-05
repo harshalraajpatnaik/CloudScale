@@ -29,17 +29,20 @@ public class WorkloadService {
     private final OrganisationRepository organisationRepository;
     private final NodeRepository nodeRepository;
     private final SchedulerService schedulerService;
+    private final com.cloudscale.audit.service.AuditLogService auditLogService;
 
     public WorkloadService(
             WorkloadRepository workloadRepository,
             OrganisationRepository organisationRepository,
             NodeRepository nodeRepository,
-            SchedulerService schedulerService
+            SchedulerService schedulerService,
+            com.cloudscale.audit.service.AuditLogService auditLogService
     ) {
         this.workloadRepository = workloadRepository;
         this.organisationRepository = organisationRepository;
         this.nodeRepository = nodeRepository;
         this.schedulerService = schedulerService;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -63,6 +66,7 @@ public class WorkloadService {
         );
         workload = workloadRepository.save(workload);
         log.info("Created workload {} ({}) for org {}", workload.getName(), workload.getId(), orgId);
+        auditLogService.recordEvent(orgId, null, "WORKLOAD_CREATED", "Workload", workload.getId().toString(), null, "{}", null);
 
         return WorkloadDTO.fromEntity(workload);
     }
@@ -83,7 +87,9 @@ public class WorkloadService {
 
     @Transactional
     public WorkloadDTO stopWorkload(UUID orgId, UUID workloadId) {
-        return schedulerService.deschedule(orgId, workloadId);
+        WorkloadDTO dto = schedulerService.deschedule(orgId, workloadId);
+        auditLogService.recordEvent(orgId, null, "WORKLOAD_STOPPED", "Workload", workloadId.toString(), null, "{}", null);
+        return dto;
     }
 
     @Transactional
@@ -122,5 +128,6 @@ public class WorkloadService {
 
         workloadRepository.delete(workload);
         log.info("Deleted workload: {}", workload.getName());
+        auditLogService.recordEvent(orgId, null, "WORKLOAD_DELETED", "Workload", workloadId.toString(), null, "{}", null);
     }
 }

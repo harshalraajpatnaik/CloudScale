@@ -1,0 +1,109 @@
+<div class="incident-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Incidents & SRE Alert Center</h1>
+        <span class="badge incident-badge">SRE Operations</span>
+      </div>
+      <p class="subtitle">Real-time infrastructure health alerts, MTTR tracking, and automated mitigation workflows.</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="fetchAlerts()" [disabled]="isLoading()">
+        <span *ngIf="isLoading()">Refreshing...</span>
+        <span *ngIf="!isLoading()">🔄 Refresh</span>
+      </button>
+      <button class="btn btn-danger" (click)="simulateIncident()">
+        ⚡ Simulate Incident Alert
+      </button>
+    </div>
+  </header>
+
+  <!-- Metrics Row -->
+  <div class="kpi-grid">
+    <div class="kpi-card" [class.highlight-critical]="(metrics()?.criticalCount || 0) > 0">
+      <span class="kpi-label">Active Critical Incidents</span>
+      <div class="kpi-value">{{ metrics()?.criticalCount || 0 }}</div>
+      <span class="kpi-sub">Immediate operator attention required</span>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Active High Severity</span>
+      <div class="kpi-value">{{ metrics()?.highCount || 0 }}</div>
+      <span class="kpi-sub">Approaching SLA threshold</span>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Total Active Alerts</span>
+      <div class="kpi-value">{{ metrics()?.totalActive || 0 }}</div>
+      <span class="kpi-sub">Across all compute nodes & workloads</span>
+    </div>
+
+    <div class="kpi-card mttr-card">
+      <span class="kpi-label">Mean Time To Resolution (MTTR)</span>
+      <div class="kpi-value">{{ metrics()?.meanTimeToResolutionMinutes?.toFixed(1) || '0.0' }} min</div>
+      <span class="kpi-sub">{{ metrics()?.resolvedPast24Hours || 0 }} incidents resolved past 24h</span>
+    </div>
+  </div>
+
+  <!-- Filter Buttons -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <button [class.active]="selectedStatus() === 'ACTIVE'" (click)="onStatusFilterChange('ACTIVE')">
+        🚨 Active Alerts
+      </button>
+      <button [class.active]="selectedStatus() === 'RESOLVED'" (click)="onStatusFilterChange('RESOLVED')">
+        ✅ Resolved History
+      </button>
+      <button [class.active]="selectedStatus() === 'ALL'" (click)="onStatusFilterChange('ALL')">
+        📋 All Incidents
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Banner -->
+  <div *ngIf="errorMessage()" class="alert alert-danger">
+    <span>⚠️ {{ errorMessage() }}</span>
+  </div>
+
+  <!-- Alerts List -->
+  <div class="alerts-grid" *ngIf="alerts().length > 0">
+    <div *ngFor="let alert of alerts()" class="alert-card" [class.severity-critical]="alert.severity === 'CRITICAL'" [class.severity-high]="alert.severity === 'HIGH'" [class.resolved]="alert.status === 'RESOLVED'">
+      <div class="card-header">
+        <div class="header-tags">
+          <span class="severity-pill severity-{{ alert.severity.toLowerCase() }}">{{ alert.severity }}</span>
+          <span class="type-pill">{{ alert.alertType }}</span>
+          <span class="status-pill status-{{ alert.status.toLowerCase() }}">{{ alert.status }}</span>
+        </div>
+        <span class="time-label">{{ alert.triggeredAt | date:'short' }}</span>
+      </div>
+
+      <div class="card-body">
+        <p class="alert-message">{{ alert.message }}</p>
+
+        <div class="meta-row">
+          <span *ngIf="alert.nodeHostname" class="meta-item">🖥️ Node: <strong>{{ alert.nodeHostname }}</strong></span>
+          <span *ngIf="alert.workloadName" class="meta-item">📦 Workload: <strong>{{ alert.workloadName }}</strong></span>
+          <span *ngIf="alert.durationMinutes !== null" class="meta-item">⏱️ Duration: <strong>{{ alert.durationMinutes }} min</strong></span>
+        </div>
+      </div>
+
+      <div class="card-footer" *ngIf="alert.status === 'ACTIVE'">
+        <button class="btn btn-resolve" (click)="resolveAlert(alert)">
+          ✓ Mark Resolved
+        </button>
+      </div>
+
+      <div class="card-footer resolved-footer" *ngIf="alert.status === 'RESOLVED'">
+        <span>Resolved on {{ alert.resolvedAt | date:'short' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="alerts().length === 0 && !isLoading()" class="empty-state">
+    <div class="empty-icon">🛡️</div>
+    <h3>No Incidents In This View</h3>
+    <p>All monitored infrastructure nodes and workloads are operating within safe operating parameters.</p>
+  </div>
+</div>

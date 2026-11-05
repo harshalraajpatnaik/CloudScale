@@ -41,6 +41,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/ai/assistant/ai-assistant.component').then(m => m.AiAssistantComponent)
   },
   {
+    path: 'cost',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/cost/cost-dashboard/cost-dashboard.component').then(m => m.CostDashboardComponent)
+  },
+  {
+    path: 'incidents',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/incidents/incident-board/incident-board.component').then(m => m.IncidentBoardComponent)
+  },
+  {
+    path: 'audit',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/audit/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
+  },
+  {
     path: 'health',
     loadComponent: () => import('./features/health/health.component').then(m => m.HealthComponent)
   },

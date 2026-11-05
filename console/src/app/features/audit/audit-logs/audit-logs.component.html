@@ -1,0 +1,68 @@
+<div class="audit-container">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <h1>Platform Audit Trail & Security Logs</h1>
+        <span class="badge audit-badge">Immutable Ledger</span>
+      </div>
+      <p class="subtitle">Complete chronological event record of all infrastructure mutations, operator actions, and automated executions.</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="fetchLogs()" [disabled]="isLoading()">
+        <span *ngIf="isLoading()">Refreshing...</span>
+        <span *ngIf="!isLoading()">🔄 Refresh Trail</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filter & Search Bar -->
+  <div class="filter-bar">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Filter by action, actor, resource type, or ID..."
+        [ngModel]="searchFilter()"
+        (ngModelChange)="searchFilter.set($event)"
+      />
+    </div>
+    <span class="counter-label">Showing {{ filteredLogs().length }} of {{ logs().length }} events</span>
+  </div>
+
+  <!-- Error Banner -->
+  <div *ngIf="errorMessage()" class="alert alert-danger">
+    <span>⚠️ {{ errorMessage() }}</span>
+  </div>
+
+  <!-- Audit Table -->
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Recorded At</th>
+          <th>Action</th>
+          <th>Resource Type</th>
+          <th>Resource ID</th>
+          <th>Actor</th>
+          <th>Client IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of filteredLogs()">
+          <td class="time-cell">{{ log.recordedAt | date:'medium' }}</td>
+          <td>
+            <span class="action-pill action-{{ log.action.toLowerCase() }}">{{ log.action }}</span>
+          </td>
+          <td class="bold-cell">{{ log.resourceType }}</td>
+          <td class="mono-cell">{{ log.resourceId }}</td>
+          <td>{{ log.actorEmail }}</td>
+          <td class="mono-cell">{{ log.clientIp || '127.0.0.1' }}</td>
+        </tr>
+        <tr *ngIf="filteredLogs().length === 0 && !isLoading()">
+          <td colspan="6" class="empty-cell">No audit log records match the current filter.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
