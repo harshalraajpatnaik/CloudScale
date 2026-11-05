@@ -1,5 +1,6 @@
 package com.cloudscale.cost.controller;
 
+import com.cloudscale.auth.security.UserPrincipal;
 import com.cloudscale.common.dto.ApiResponse;
 import com.cloudscale.cost.dto.CostSummaryDTO;
 import com.cloudscale.cost.dto.NodeCostDTO;
@@ -30,6 +31,9 @@ public class CostController {
     }
 
     private UUID getTenantOrgId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) {
+            return up.getOrganisationId();
+        }
         return organisationRepository.findAll().stream()
                 .findFirst()
                 .map(Organisation::getId)

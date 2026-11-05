@@ -104,6 +104,9 @@ public class SchedulerService {
             workload.setAssignedNode(null);
         }
 
+        if (workload.getActualState() == WorkloadState.RUNNING) {
+            workload.transitionTo(WorkloadState.STOPPING);
+        }
         workload.transitionTo(WorkloadState.STOPPED);
         workload = workloadRepository.save(workload);
         log.info("Descheduled workload: {}", workload.getName());

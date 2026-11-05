@@ -1,5 +1,6 @@
 package com.cloudscale.audit.controller;
 
+import com.cloudscale.auth.security.UserPrincipal;
 import com.cloudscale.audit.dto.AuditLogDTO;
 import com.cloudscale.audit.service.AuditLogService;
 import com.cloudscale.common.dto.ApiResponse;
@@ -28,6 +29,9 @@ public class AuditLogController {
     }
 
     private UUID getTenantOrgId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) {
+            return up.getOrganisationId();
+        }
         return organisationRepository.findAll().stream()
                 .findFirst()
                 .map(Organisation::getId)

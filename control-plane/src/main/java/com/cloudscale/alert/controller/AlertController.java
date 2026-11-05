@@ -1,5 +1,6 @@
 package com.cloudscale.alert.controller;
 
+import com.cloudscale.auth.security.UserPrincipal;
 import com.cloudscale.alert.dto.AlertDTO;
 import com.cloudscale.alert.dto.AlertMetricsDTO;
 import com.cloudscale.alert.service.AlertService;
@@ -35,6 +36,9 @@ public class AlertController {
     }
 
     private UUID getTenantOrgId(Authentication auth) {
+        if (auth != null && auth.getPrincipal() instanceof UserPrincipal up) {
+            return up.getOrganisationId();
+        }
         return organisationRepository.findAll().stream()
                 .findFirst()
                 .map(Organisation::getId)

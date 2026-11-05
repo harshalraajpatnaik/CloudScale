@@ -134,6 +134,7 @@ public class AIService {
         return AIRecommendationDTO.fromEntity(saved);
     }
 
+    @Transactional(readOnly = true)
     public ChatResponseDTO chat(UUID orgId, String userMessage, List<Map<String, String>> history) {
         Map<String, Object> context = buildClusterContext(orgId);
         String reply = aiServiceClient.chat(userMessage, history, context);

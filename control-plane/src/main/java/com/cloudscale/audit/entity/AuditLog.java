@@ -3,6 +3,8 @@ package com.cloudscale.audit.entity;
 import com.cloudscale.auth.entity.User;
 import com.cloudscale.tenancy.entity.Organisation;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -32,9 +34,11 @@ public class AuditLog {
     @Column(name = "resource_id", nullable = false, length = 100)
     private String resourceId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "previous_state", columnDefinition = "JSONB")
     private String previousState;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_state", columnDefinition = "JSONB")
     private String newState;
 
