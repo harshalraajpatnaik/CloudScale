@@ -37,8 +37,9 @@ export class WorkloadService {
     return this.http.post<ApiResponse<Workload>>(`${this.baseUrl}/${workloadId}/stop`, {});
   }
 
-  restartWorkload(workloadId: string): Observable<ApiResponse<Workload>> {
-    return this.http.post<ApiResponse<Workload>>(`${this.baseUrl}/${workloadId}/restart`, {});
+  restartWorkload(workloadId: string, algorithm: SchedulingAlgorithmType = 'RESOURCE_AWARE'): Observable<ApiResponse<Workload>> {
+    const payload: ScheduleWorkloadRequest = { algorithm };
+    return this.http.post<ApiResponse<Workload>>(`${this.baseUrl}/${workloadId}/restart`, payload);
   }
 
   suspendWorkload(workloadId: string): Observable<ApiResponse<Workload>> {

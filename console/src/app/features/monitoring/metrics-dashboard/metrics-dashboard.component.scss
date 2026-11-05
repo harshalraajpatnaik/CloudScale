@@ -105,6 +105,96 @@
   }
 }
 
+.host-detail-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  .host-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #94a3b8;
+
+      &.active {
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+      }
+    }
+
+    .host-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .host-ip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      background: var(--color-bg-surface-elevated);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .host-kind {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+
+      &.sim {
+        background: rgba(168, 85, 247, 0.1);
+        color: #a855f7;
+      }
+    }
+  }
+
+  .host-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+
+      .stat-lbl {
+        color: var(--color-text-secondary);
+      }
+
+      .stat-val {
+        color: var(--color-text-primary);
+        font-weight: 600;
+      }
+    }
+
+    .stat-divider {
+      color: var(--color-border-default);
+    }
+  }
+}
+
 .chart-card {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);

@@ -109,12 +109,29 @@
   .algo-selector-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
 
-    label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--color-text-secondary);
+    .algo-label-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+
+      .algo-badge {
+        font-size: 10px;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-surface-elevated);
+        padding: 1px 6px;
+        border-radius: 4px;
+        border: 1px solid var(--color-border-subtle);
+        white-space: nowrap;
+      }
     }
 
     .select-input {
@@ -129,6 +146,28 @@
 
       &:focus {
         border-color: var(--color-primary);
+      }
+    }
+
+    .btn-schedule-all {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #10b981;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover:not(:disabled) {
+        background: #10b981;
+        color: #ffffff;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
     }
   }
@@ -528,6 +567,37 @@
     min-width: 0;
     width: 100%;
     box-sizing: border-box;
+
+    &.checkbox-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 24px;
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-primary);
+        cursor: pointer;
+
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          accent-color: var(--color-primary);
+          cursor: pointer;
+        }
+      }
+
+      .field-hint {
+        font-size: 11px;
+        color: var(--color-text-secondary);
+        margin-left: 24px;
+        margin-top: 4px;
+      }
+    }
   }
 }
 

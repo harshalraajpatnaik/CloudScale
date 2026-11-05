@@ -70,13 +70,26 @@
 
     <!-- Algorithm Selector for Manual Scheduling -->
     <div class="algo-selector-group">
-      <label for="globalAlgoSelect">Scheduling Algorithm:</label>
+      <div class="algo-label-box">
+        <label for="globalAlgoSelect">Scheduling Algorithm:</label>
+        <span class="algo-badge" title="Algorithm applied when manually scheduling Pending/Failed workloads or restarting">
+          Policy for ▶ Schedule & ↻ Restart
+        </span>
+      </div>
       <select id="globalAlgoSelect" [(ngModel)]="selectedAlgorithm" class="select-input">
         <option value="RESOURCE_AWARE">Resource-Aware (Default / Variance Minimization)</option>
         <option value="BEST_FIT">Best-Fit (Host Consolidation / Tight Packing)</option>
         <option value="FIRST_FIT">First-Fit (Low Latency Placement)</option>
         <option value="PRIORITY">Priority Headroom (Resilience)</option>
       </select>
+      <button 
+        *ngIf="pendingCount > 0" 
+        class="btn-tbl btn-schedule-all" 
+        [disabled]="isSchedulingAll()" 
+        (click)="scheduleAllPending()"
+        title="Schedule all pending workloads using the selected algorithm">
+        {{ isSchedulingAll() ? 'Scheduling...' : '▶ Schedule All Pending (' + pendingCount + ')' }}
+      </button>
     </div>
   </div>
 
@@ -258,6 +271,26 @@
               <span class="field-error" *ngIf="createForm.get('memoryMbRequired')?.touched && createForm.get('memoryMbRequired')?.invalid">
                 Min 128 MB required.
               </span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="modalAlgo">Scheduling Algorithm</label>
+              <select id="modalAlgo" formControlName="schedulingAlgorithm" class="form-input select-styled">
+                <option value="RESOURCE_AWARE">Resource-Aware (Default / Balanced)</option>
+                <option value="BEST_FIT">Best-Fit (Host Consolidation)</option>
+                <option value="FIRST_FIT">First-Fit (Low Latency)</option>
+                <option value="PRIORITY">Priority Headroom (Resilience)</option>
+              </select>
+            </div>
+
+            <div class="form-group col checkbox-col">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="autoSchedule" />
+                <span>Auto-schedule immediately</span>
+              </label>
+              <span class="field-hint">Place workload onto an optimal node right after creation</span>
             </div>
           </div>
         </div>

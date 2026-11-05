@@ -36,9 +36,14 @@
       <div class="metric-hint">Healthy reporting nodes</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Active Workloads</div>
+      <div class="metric-label">Cluster Active Workloads</div>
       <div class="metric-value text-primary">{{ s.totalActiveWorkloads }}</div>
-      <div class="metric-hint">Allocated instances running</div>
+      <div class="metric-hint">
+        <span *ngIf="selectedNode as sn">
+          {{ selectedNodeWorkloadCount() }} running on {{ sn.hostname }}
+        </span>
+        <span *ngIf="!selectedNode">Running instances across cluster</span>
+      </div>
     </div>
   </section>
 
@@ -71,6 +76,30 @@
         <option [ngValue]="15">Every 15 seconds</option>
         <option [ngValue]="30">Every 30 seconds</option>
       </select>
+    </div>
+  </div>
+
+  <!-- Selected Host Detail Bar -->
+  <div class="host-detail-bar" *ngIf="selectedNode as sn">
+    <div class="host-pill">
+      <span class="pill-dot active"></span>
+      <strong class="host-name">{{ sn.hostname }}</strong>
+      <span class="host-ip">{{ sn.ipAddress }}</span>
+      <span class="host-kind" [class.sim]="sn.isSimulated">{{ sn.isSimulated ? 'SIMULATED' : 'PHYSICAL' }}</span>
+    </div>
+    <div class="host-stats">
+      <div class="stat-badge">
+        <span class="stat-lbl">Workloads on this Host:</span>
+        <strong class="stat-val text-primary">{{ selectedNodeWorkloadCount() }}</strong>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-lbl">Allocated CPU:</span>
+        <strong class="stat-val">{{ sn.allocatedCpuCores }} / {{ sn.totalCpuCores }} Cores</strong>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-lbl">Allocated RAM:</span>
+        <strong class="stat-val">{{ sn.allocatedMemoryMb }} / {{ sn.totalMemoryMb }} MB</strong>
+      </div>
     </div>
   </div>
 

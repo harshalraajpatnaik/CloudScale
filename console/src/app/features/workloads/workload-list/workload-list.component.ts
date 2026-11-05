@@ -31,6 +31,7 @@ export class WorkloadListComponent implements OnInit {
 
   // Selected workload for scheduling dialog
   schedulingWorkloadId = signal<string | null>(null);
+  isSchedulingAll = signal<boolean>(false);
 
   constructor() {
     this.createForm = this.fb.group({
@@ -38,7 +39,9 @@ export class WorkloadListComponent implements OnInit {
       workloadType: ['SERVICE', [Validators.required]],
       priority: ['NORMAL', [Validators.required]],
       cpuCoresRequired: [2, [Validators.required, Validators.min(1), Validators.max(32)]],
-      memoryMbRequired: [2048, [Validators.required, Validators.min(128), Validators.max(65536)]]
+      memoryMbRequired: [2048, [Validators.required, Validators.min(128), Validators.max(65536)]],
+      schedulingAlgorithm: ['RESOURCE_AWARE'],
+      autoSchedule: [true]
     });
   }
 
@@ -87,7 +90,9 @@ export class WorkloadListComponent implements OnInit {
       workloadType: 'SERVICE',
       priority: 'NORMAL',
       cpuCoresRequired: 2,
-      memoryMbRequired: 2048
+      memoryMbRequired: 2048,
+      schedulingAlgorithm: this.selectedAlgorithm,
+      autoSchedule: true
     });
     this.showCreateModal.set(true);
   }
@@ -105,13 +110,41 @@ export class WorkloadListComponent implements OnInit {
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
 
-    const req: CreateWorkloadRequest = this.createForm.value;
+    const formVal = this.createForm.value;
+    const req: CreateWorkloadRequest = {
+      name: formVal.name,
+      workloadType: formVal.workloadType,
+      priority: formVal.priority,
+      cpuCoresRequired: formVal.cpuCoresRequired,
+      memoryMbRequired: formVal.memoryMbRequired
+    };
+    const algo: SchedulingAlgorithmType = formVal.schedulingAlgorithm || this.selectedAlgorithm;
+    const autoSchedule: boolean = formVal.autoSchedule !== false;
+
     this.workloadService.createWorkload(req).subscribe({
       next: (res) => {
-        this.isSubmitting.set(false);
-        this.closeCreateModal();
-        this.showFlashMessage(`Workload '${res.data.name}' submitted in PENDING state.`);
-        this.fetchWorkloads();
+        const createdWorkload = res.data;
+        if (autoSchedule) {
+          this.workloadService.scheduleWorkload(createdWorkload.id, algo).subscribe({
+            next: (schedRes) => {
+              this.isSubmitting.set(false);
+              this.closeCreateModal();
+              this.showFlashMessage(`Workload '${schedRes.data.name}' deployed and scheduled onto '${schedRes.data.assignedNodeHostname}' via ${algo}.`);
+              this.fetchWorkloads();
+            },
+            error: (schedErr) => {
+              this.isSubmitting.set(false);
+              this.closeCreateModal();
+              this.showFlashMessage(`Workload '${createdWorkload.name}' created, but placement failed: ${schedErr.error?.error?.message || 'Insufficient node capacity'}.`);
+              this.fetchWorkloads();
+            }
+          });
+        } else {
+          this.isSubmitting.set(false);
+          this.closeCreateModal();
+          this.showFlashMessage(`Workload '${createdWorkload.name}' submitted in PENDING state.`);
+          this.fetchWorkloads();
+        }
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -138,6 +171,38 @@ export class WorkloadListComponent implements OnInit {
     });
   }
 
+  scheduleAllPending(): void {
+    const pendings = this.workloads().filter(w => w.actualState === 'PENDING' || w.actualState === 'FAILED');
+    if (pendings.length === 0) return;
+
+    this.isSchedulingAll.set(true);
+    let completed = 0;
+    let failed = 0;
+
+    const processNext = (index: number) => {
+      if (index >= pendings.length) {
+        this.isSchedulingAll.set(false);
+        this.showFlashMessage(`Bulk scheduling finished: ${completed} scheduled successfully, ${failed} failed.`);
+        this.fetchWorkloads();
+        return;
+      }
+
+      const w = pendings[index];
+      this.workloadService.scheduleWorkload(w.id, this.selectedAlgorithm).subscribe({
+        next: () => {
+          completed++;
+          processNext(index + 1);
+        },
+        error: () => {
+          failed++;
+          processNext(index + 1);
+        }
+      });
+    };
+
+    processNext(0);
+  }
+
   stopWorkload(workload: Workload): void {
     this.workloadService.stopWorkload(workload.id).subscribe({
       next: (res) => {
@@ -151,9 +216,10 @@ export class WorkloadListComponent implements OnInit {
   }
 
   restartWorkload(workload: Workload): void {
-    this.workloadService.restartWorkload(workload.id).subscribe({
+    const algo = this.selectedAlgorithm;
+    this.workloadService.restartWorkload(workload.id, algo).subscribe({
       next: (res) => {
-        this.showFlashMessage(`Workload '${res.data.name}' restarted and scheduled onto '${res.data.assignedNodeHostname || 'optimal host'}'.`);
+        this.showFlashMessage(`Workload '${res.data.name}' restarted and scheduled onto '${res.data.assignedNodeHostname || 'optimal host'}' via ${algo}.`);
         this.fetchWorkloads();
       },
       error: (err) => {

@@ -9,6 +9,8 @@ import com.cloudscale.metrics.repository.NodeMetricRepository;
 import com.cloudscale.node.entity.Node;
 import com.cloudscale.node.model.NodeStatus;
 import com.cloudscale.node.repository.NodeRepository;
+import com.cloudscale.workload.model.WorkloadState;
+import com.cloudscale.workload.repository.WorkloadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,10 +31,12 @@ public class MetricsService {
 
     private final NodeMetricRepository nodeMetricRepository;
     private final NodeRepository nodeRepository;
+    private final WorkloadRepository workloadRepository;
 
-    public MetricsService(NodeMetricRepository nodeMetricRepository, NodeRepository nodeRepository) {
+    public MetricsService(NodeMetricRepository nodeMetricRepository, NodeRepository nodeRepository, WorkloadRepository workloadRepository) {
         this.nodeMetricRepository = nodeMetricRepository;
         this.nodeRepository = nodeRepository;
+        this.workloadRepository = workloadRepository;
     }
 
     @Transactional
@@ -85,6 +89,7 @@ public class MetricsService {
         List<Node> nodes = nodeRepository.findByOrganisationId(orgId);
         int totalNodes = nodes.size();
         int activeNodes = (int) nodes.stream().filter(n -> n.getStatus() == NodeStatus.ACTIVE).count();
+        int runningWorkloadsCount = workloadRepository.findByOrganisationIdAndActualState(orgId, WorkloadState.RUNNING).size();
 
         Instant since = Instant.now().minus(Math.max(1, durationMinutes), ChronoUnit.MINUTES);
         List<NodeMetric> recentMetrics = nodeMetricRepository.findByOrganisationIdSince(orgId, since);
@@ -97,7 +102,7 @@ public class MetricsService {
                     BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                     BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                     BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
-                    0,
+                    runningWorkloadsCount,
                     since,
                     Instant.now()
             );
@@ -128,6 +133,7 @@ public class MetricsService {
         BigDecimal count = BigDecimal.valueOf(recentMetrics.size());
         BigDecimal avgCpu = sumCpu.divide(count, 2, RoundingMode.HALF_UP);
         BigDecimal avgMem = sumMem.divide(count, 2, RoundingMode.HALF_UP);
+        int totalActiveWorkloads = runningWorkloadsCount > 0 ? runningWorkloadsCount : maxWorkloads;
 
         return new ClusterMetricsSummaryDTO(
                 totalNodes,
@@ -136,7 +142,7 @@ public class MetricsService {
                 peakCpu.setScale(2, RoundingMode.HALF_UP),
                 avgMem,
                 peakMem.setScale(2, RoundingMode.HALF_UP),
-                maxWorkloads,
+                totalActiveWorkloads,
                 since,
                 Instant.now()
         );

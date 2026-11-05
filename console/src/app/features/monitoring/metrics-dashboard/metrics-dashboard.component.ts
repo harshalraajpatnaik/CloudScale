@@ -80,6 +80,18 @@ export class MetricsDashboardComponent implements OnInit, OnDestroy {
     return list.slice(start, start + size);
   });
 
+  selectedNodeWorkloadCount = computed(() => {
+    const list = this.metrics();
+    if (list.length > 0 && list[0].activeWorkloadCount != null) {
+      return list[0].activeWorkloadCount;
+    }
+    const node = this.nodes().find(n => n.id === this.selectedNodeId());
+    if (node && node.allocatedCpuCores) {
+      return Math.max(1, Math.round(node.allocatedCpuCores / 2));
+    }
+    return 0;
+  });
+
   totalPages = computed(() => {
     const size = this.pageSize();
     if (size <= 0) return 1;
