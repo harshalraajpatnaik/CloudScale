@@ -41,7 +41,7 @@ export class LoginComponent {
       next: (res) => {
         this.isLoading.set(false);
         if (res.success) {
-          this.router.navigate(['/health']);
+          this.router.navigate(['/nodes']);
         }
       },
       error: (err) => {

@@ -1,10 +1,19 @@
 import os
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from agent.simulator import NodeTelemetrySimulator
 
 app = FastAPI(
     title="CloudScale Simulated Node Agent",
     description="Reports simulated telemetry and heartbeats to the control plane"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 HOSTNAME = os.getenv("NODE_HOSTNAME", "worker-sim-01")
