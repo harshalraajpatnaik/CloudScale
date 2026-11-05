@@ -1,0 +1,60 @@
+<div class="auth-card-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo-box">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 18H6C4.34315 18 3 16.6569 3 15C3 13.5789 3.98595 12.3887 5.32759 12.0835C5.11582 11.4393 5 10.7381 5 10C5 6.68629 7.68629 4 11 4C13.637 4 15.8675 5.70327 16.6577 8.08342C17.0722 8.02867 17.5197 8 18 8C20.7614 8 23 10.2386 23 13C23 15.7614 20.7614 18 18 18H19Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Sign in to CloudScale</h2>
+      <p class="subtitle">Access your cloud control plane and infrastructure telemetry</p>
+    </div>
+
+    <div *ngIf="errorMessage()" class="alert-error" role="alert">
+      {{ errorMessage() }}
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="email">Work Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="name@company.com"
+          [class.invalid]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid"
+        />
+        <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('required')" class="validation-msg">
+          Email is required
+        </span>
+        <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.hasError('email')" class="validation-msg">
+          Enter a valid email address
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          [class.invalid]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+        />
+        <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.hasError('required')" class="validation-msg">
+          Password is required
+        </span>
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="isLoading() || loginForm.invalid">
+        <span *ngIf="!isLoading()">Sign In</span>
+        <span *ngIf="isLoading()">Authenticating...</span>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <span>Need an organization account?</span>
+      <a routerLink="/register" class="link-action">Register organization</a>
+    </div>
+  </div>
+</div>

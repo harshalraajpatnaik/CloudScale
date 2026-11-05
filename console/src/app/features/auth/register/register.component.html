@@ -1,0 +1,91 @@
+<div class="auth-card-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo-box">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 18H6C4.34315 18 3 16.6569 3 15C3 13.5789 3.98595 12.3887 5.32759 12.0835C5.11582 11.4393 5 10.7381 5 10C5 6.68629 7.68629 4 11 4C13.637 4 15.8675 5.70327 16.6577 8.08342C17.0722 8.02867 17.5197 8 18 8C20.7614 8 23 10.2386 23 13C23 15.7614 20.7614 18 18 18H19Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Create Organization Account</h2>
+      <p class="subtitle">Set up your enterprise tenant and initial administrator profile</p>
+    </div>
+
+    <div *ngIf="errorMessage()" class="alert-error" role="alert">
+      {{ errorMessage() }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="orgName">Organization Name</label>
+        <input
+          id="orgName"
+          type="text"
+          formControlName="organisationName"
+          placeholder="Acme Cloud Systems"
+          [class.invalid]="registerForm.get('organisationName')?.touched && registerForm.get('organisationName')?.invalid"
+        />
+        <span *ngIf="registerForm.get('organisationName')?.touched && registerForm.get('organisationName')?.hasError('required')" class="validation-msg">
+          Organization name is required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="fullName">Administrator Full Name</label>
+        <input
+          id="fullName"
+          type="text"
+          formControlName="fullName"
+          placeholder="Jane Doe"
+          [class.invalid]="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid"
+        />
+        <span *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.hasError('required')" class="validation-msg">
+          Full name is required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="regEmail">Work Email</label>
+        <input
+          id="regEmail"
+          type="email"
+          formControlName="email"
+          placeholder="jane@acmecloud.com"
+          [class.invalid]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid"
+        />
+        <span *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('required')" class="validation-msg">
+          Email is required
+        </span>
+        <span *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.hasError('email')" class="validation-msg">
+          Enter a valid email address
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="regPassword">Master Password</label>
+        <input
+          id="regPassword"
+          type="password"
+          formControlName="password"
+          placeholder="Minimum 8 characters"
+          [class.invalid]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid"
+        />
+        <span *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('required')" class="validation-msg">
+          Password is required
+        </span>
+        <span *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.hasError('minlength')" class="validation-msg">
+          Password must be at least 8 characters
+        </span>
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="isLoading() || registerForm.invalid">
+        <span *ngIf="!isLoading()">Register &amp; Launch Control Plane</span>
+        <span *ngIf="isLoading()">Creating Organization...</span>
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <span>Already have an account?</span>
+      <a routerLink="/login" class="link-action">Sign in here</a>
+    </div>
+  </div>
+</div>

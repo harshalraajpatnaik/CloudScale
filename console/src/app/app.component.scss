@@ -19,19 +19,26 @@
   .navbar-brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 
-    .brand-logo {
+    .brand-link {
       display: flex;
       align-items: center;
-      justify-content: center;
-    }
+      gap: 0.5rem;
+      text-decoration: none;
 
-    .brand-name {
-      font-size: 1.125rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--color-text-primary);
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .brand-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--color-text-primary);
+      }
     }
 
     .badge-env {
@@ -44,20 +51,123 @@
       color: var(--color-primary);
       border: 1px solid var(--color-border-default);
     }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: 1rem;
+
+      .nav-link {
+        color: var(--color-text-secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.35rem 0.65rem;
+        border-radius: var(--radius-sm);
+        transition: all 0.15s ease;
+
+        &:hover, &.active {
+          color: var(--color-text-primary);
+          background-color: var(--color-bg-surface-hover);
+        }
+      }
+    }
   }
 
   .navbar-actions {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+
+    .btn-nav {
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-md);
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-surface-hover);
+      }
+    }
+
+    .btn-nav-primary {
+      background-color: var(--color-primary);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-md);
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: var(--color-primary-hover);
+      }
+    }
+
+    .user-badge-container {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8125rem;
+      background-color: var(--color-bg-surface-elevated);
+      border: 1px solid var(--color-border-subtle);
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-md);
+
+      .org-name {
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+
+      .divider {
+        color: var(--color-text-muted);
+      }
+
+      .user-name {
+        color: var(--color-text-secondary);
+      }
+
+      .role-pill {
+        font-family: var(--font-mono);
+        font-size: 0.6875rem;
+        font-weight: 700;
+        background-color: var(--color-primary-focus);
+        color: var(--color-primary);
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--radius-sm);
+        margin-left: 0.25rem;
+      }
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--color-border-default);
+      color: var(--color-text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: var(--color-bg-surface-hover);
+        color: var(--color-danger);
+        border-color: var(--color-danger);
+      }
+    }
 
     .btn-theme-toggle {
       background: var(--color-bg-surface-elevated);
       border: 1px solid var(--color-border-default);
-      color: var(--color-text-primary);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      padding: 0.35rem 0.75rem;
+      font-size: 0.9375rem;
+      padding: 0.35rem 0.6rem;
       border-radius: var(--radius-md);
       cursor: pointer;
       transition: all 0.15s ease;

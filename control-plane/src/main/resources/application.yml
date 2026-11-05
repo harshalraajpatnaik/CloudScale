@@ -7,7 +7,7 @@ spring:
   application:
     name: cloudscale-control-plane
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/cloudscale}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5438/cloudscale}
     username: ${POSTGRES_USER:cloudscale_admin}
     password: ${POSTGRES_PASSWORD:cloudscale_secure_pass_2026}
     driver-class-name: org.postgresql.Driver
