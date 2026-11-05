@@ -16,13 +16,13 @@ public enum WorkloadState {
         if (this == next) return true;
         return switch (this) {
             case PENDING -> next == SCHEDULING || next == FAILED || next == STOPPED;
-            case SCHEDULING -> next == RUNNING || next == FAILED || next == PENDING;
+            case SCHEDULING -> next == RUNNING || next == FAILED || next == PENDING || next == STOPPED;
             case RUNNING -> next == STOPPING || next == SUSPENDED || next == FAILED || next == COMPLETED;
             case STOPPING -> next == STOPPED || next == FAILED;
             case STOPPED -> next == PENDING || next == SCHEDULING || next == RUNNING;
-            case SUSPENDED -> next == RUNNING || next == STOPPING || next == STOPPED;
-            case FAILED -> next == PENDING || next == SCHEDULING;
-            case COMPLETED -> false;
+            case SUSPENDED -> next == RUNNING || next == SCHEDULING || next == PENDING || next == STOPPING || next == STOPPED;
+            case FAILED -> next == PENDING || next == SCHEDULING || next == STOPPED || next == RUNNING;
+            case COMPLETED -> next == PENDING || next == SCHEDULING || next == STOPPED;
         };
     }
 }

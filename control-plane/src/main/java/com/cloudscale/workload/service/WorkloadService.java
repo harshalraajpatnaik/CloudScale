@@ -97,10 +97,15 @@ public class WorkloadService {
         Workload workload = workloadRepository.findByIdAndOrganisationId(workloadId, orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("WORKLOAD_NOT_FOUND", "Workload not found"));
 
-        if (workload.getActualState() == WorkloadState.RUNNING) {
+        if (workload.getAssignedNode() != null || workload.getActualState() == WorkloadState.RUNNING) {
             schedulerService.deschedule(orgId, workloadId);
+        } else if (workload.getActualState() != WorkloadState.STOPPED && workload.getActualState() != WorkloadState.PENDING) {
+            workload.transitionTo(WorkloadState.STOPPED);
+            workloadRepository.save(workload);
         }
-        return schedulerService.schedule(orgId, workloadId, algorithm);
+        WorkloadDTO scheduled = schedulerService.schedule(orgId, workloadId, algorithm);
+        auditLogService.recordEvent(orgId, null, "WORKLOAD_RESTARTED", "Workload", workloadId.toString(), null, "{\"algorithm\":\"" + algorithm + "\"}", null);
+        return scheduled;
     }
 
     @Transactional

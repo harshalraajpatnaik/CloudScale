@@ -223,8 +223,8 @@
             <div class="form-group col">
               <label for="workloadType">Workload Type</label>
               <select id="workloadType" formControlName="workloadType" class="form-input select-styled">
-                <option value="SERVICE">Service (Stateless HTTP/gRPC)</option>
-                <option value="BATCH_JOB">Batch Job (Finite Duration)</option>
+                <option value="SERVICE">Service (Stateless)</option>
+                <option value="BATCH_JOB">Batch Job (Finite)</option>
                 <option value="DATABASE">Database (Stateful)</option>
                 <option value="INGRESS_CONTROLLER">Ingress Controller</option>
                 <option value="BACKGROUND_WORKER">Background Worker</option>
@@ -234,10 +234,10 @@
             <div class="form-group col">
               <label for="priority">Priority Class</label>
               <select id="priority" formControlName="priority" class="form-input select-styled">
-                <option value="CRITICAL">Critical (Preempts others / Max Headroom)</option>
-                <option value="HIGH">High</option>
-                <option value="NORMAL">Normal</option>
-                <option value="LOW">Low</option>
+                <option value="CRITICAL">Critical (Preemptive)</option>
+                <option value="HIGH">High Priority</option>
+                <option value="NORMAL">Normal Priority</option>
+                <option value="LOW">Low Priority</option>
                 <option value="BATCH">Batch (Best Effort)</option>
               </select>
             </div>
