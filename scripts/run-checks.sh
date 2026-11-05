@@ -33,6 +33,16 @@ if [ -d "node-agent/.venv" ]; then
     echo "✅ Node Agent tests PASSED"
 fi
 
+# 4. Angular Console Build
+if [ -d "console/node_modules" ]; then
+    echo ""
+    echo "--> 4. Testing Angular Console (Production Build)..."
+    cd console
+    npm run build -- --configuration production
+    echo "✅ Angular Console build PASSED"
+    cd ..
+fi
+
 echo ""
 echo "=========================================="
 echo " All CloudScale checks completed cleanly! "

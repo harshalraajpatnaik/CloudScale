@@ -1,0 +1,243 @@
+<div class="node-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Compute Infrastructure</h1>
+      <p class="page-subtitle">Manage cluster host nodes, monitor CPU and memory saturation, and control host draining.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="fetchNodes()" [disabled]="isLoading()">
+        <span *ngIf="!isLoading()">↻ Refresh</span>
+        <span *ngIf="isLoading()">Refreshing...</span>
+      </button>
+      <button class="btn btn-primary" (click)="openRegisterModal()">
+        + Register Compute Host
+      </button>
+    </div>
+  </header>
+
+  <!-- Flash Messages -->
+  <div class="alert alert-success" *ngIf="successMessage()">
+    {{ successMessage() }}
+  </div>
+  <div class="alert alert-danger" *ngIf="errorMessage()">
+    {{ errorMessage() }}
+  </div>
+
+  <!-- Cluster Resource Overview Cards -->
+  <section class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Registered Hosts</div>
+      <div class="metric-value">{{ nodes().length }}</div>
+      <div class="metric-hint">Cluster compute nodes</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">CPU Capacity</div>
+      <div class="metric-value">{{ totalAllocatedCpu }} / {{ totalCpuCapacity }} <span class="unit">cores</span></div>
+      <div class="metric-hint">
+        {{ totalCpuCapacity > 0 ? (totalAllocatedCpu / totalCpuCapacity * 100 | number:'1.0-1') : 0 }}% allocated
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Memory Capacity</div>
+      <div class="metric-value">{{ totalAllocatedMemoryGb }} / {{ totalMemoryGb }} <span class="unit">GB</span></div>
+      <div class="metric-hint">
+        {{ totalMemoryGb > 0 ? (totalAllocatedMemoryGb / totalMemoryGb * 100 | number:'1.0-1') : 0 }}% allocated
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-tabs">
+      <button 
+        class="filter-tab" 
+        [class.active]="statusFilter() === 'ALL'" 
+        (click)="statusFilter.set('ALL')">
+        All ({{ nodes().length }})
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="statusFilter() === 'ACTIVE'" 
+        (click)="statusFilter.set('ACTIVE')">
+        Active
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="statusFilter() === 'DRAINING'" 
+        (click)="statusFilter.set('DRAINING')">
+        Draining
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="statusFilter() === 'MAINTENANCE'" 
+        (click)="statusFilter.set('MAINTENANCE')">
+        Maintenance
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="statusFilter() === 'UNREACHABLE'" 
+        (click)="statusFilter.set('UNREACHABLE')">
+        Unreachable
+      </button>
+    </div>
+  </div>
+
+  <!-- Nodes Grid -->
+  <div class="nodes-grid" *ngIf="filteredNodes.length > 0; else noNodes">
+    <div class="node-card" *ngFor="let node of filteredNodes">
+      <div class="node-card-header">
+        <div class="node-title-group">
+          <h3 class="node-hostname">{{ node.hostname }}</h3>
+          <span class="node-ip">{{ node.ipAddress }}</span>
+        </div>
+        <div class="node-badges">
+          <span class="badge" [ngClass]="node.isSimulated ? 'badge-simulated' : 'badge-physical'">
+            {{ node.isSimulated ? 'SIMULATED' : 'PHYSICAL' }}
+          </span>
+          <span class="status-pill status-{{ node.status.toLowerCase() }}">
+            {{ node.status }}
+          </span>
+        </div>
+      </div>
+
+      <div class="node-meters">
+        <!-- CPU Meter -->
+        <div class="meter-group">
+          <div class="meter-header">
+            <span class="meter-title">CPU Saturation</span>
+            <span class="meter-detail">{{ node.allocatedCpuCores }} / {{ node.totalCpuCores }} Cores ({{ node.cpuUtilizationPercent }}%)</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" 
+                 [style.width.%]="node.cpuUtilizationPercent"
+                 [class.warning]="node.cpuUtilizationPercent >= 70 && node.cpuUtilizationPercent < 90"
+                 [class.danger]="node.cpuUtilizationPercent >= 90">
+            </div>
+          </div>
+        </div>
+
+        <!-- Memory Meter -->
+        <div class="meter-group">
+          <div class="meter-header">
+            <span class="meter-title">Memory Saturation</span>
+            <span class="meter-detail">{{ node.allocatedMemoryMb }} / {{ node.totalMemoryMb }} MB ({{ node.memoryUtilizationPercent }}%)</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" 
+                 [style.width.%]="node.memoryUtilizationPercent"
+                 [class.warning]="node.memoryUtilizationPercent >= 70 && node.memoryUtilizationPercent < 90"
+                 [class.danger]="node.memoryUtilizationPercent >= 90">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="node-footer">
+        <div class="heartbeat-info">
+          Last heartbeat: {{ node.lastHeartbeat | date:'shortTime' }}
+        </div>
+        <div class="node-actions">
+          <button 
+            *ngIf="node.status !== 'ACTIVE'" 
+            class="btn-action activate" 
+            (click)="updateStatus(node.id, 'ACTIVE')"
+            title="Set Active for scheduling">
+            Activate
+          </button>
+          <button 
+            *ngIf="node.status === 'ACTIVE'" 
+            class="btn-action drain" 
+            (click)="updateStatus(node.id, 'DRAINING')"
+            title="Drain workloads from this host">
+            Drain
+          </button>
+          <button 
+            *ngIf="node.status !== 'MAINTENANCE'" 
+            class="btn-action maintenance" 
+            (click)="updateStatus(node.id, 'MAINTENANCE')"
+            title="Put in maintenance mode">
+            Maintenance
+          </button>
+          <button 
+            class="btn-action delete" 
+            (click)="deleteNode(node)"
+            title="Decommission and remove host">
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noNodes>
+    <div class="empty-state">
+      <div class="empty-icon">🖥️</div>
+      <h3>No Compute Hosts Found</h3>
+      <p>Register a simulated or physical compute node to start scheduling workloads.</p>
+      <button class="btn btn-primary" (click)="openRegisterModal()">+ Register Host</button>
+    </div>
+  </ng-template>
+
+  <!-- Register Node Modal Dialog -->
+  <div class="modal-backdrop" *ngIf="showRegisterModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>Register Compute Host</h2>
+        <button class="btn-close" (click)="closeRegisterModal()">✕</button>
+      </div>
+      <form [formGroup]="registerForm" (ngSubmit)="submitRegister()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="hostname">Hostname</label>
+            <input id="hostname" type="text" formControlName="hostname" class="form-input" placeholder="worker-01.cloudscale.internal" />
+            <span class="field-error" *ngIf="registerForm.get('hostname')?.touched && registerForm.get('hostname')?.invalid">
+              Valid hostname required (min 2 chars).
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="ipAddress">IP Address or Host Endpoint</label>
+            <input id="ipAddress" type="text" formControlName="ipAddress" class="form-input" placeholder="192.168.1.100" />
+            <span class="field-error" *ngIf="registerForm.get('ipAddress')?.touched && registerForm.get('ipAddress')?.invalid">
+              Valid IP address or hostname endpoint required.
+            </span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="totalCpuCores">Total CPU Cores</label>
+              <input id="totalCpuCores" type="number" formControlName="totalCpuCores" class="form-input" min="1" max="128" />
+              <span class="field-error" *ngIf="registerForm.get('totalCpuCores')?.touched && registerForm.get('totalCpuCores')?.invalid">
+                Must be between 1 and 128 cores.
+              </span>
+            </div>
+
+            <div class="form-group col">
+              <label for="totalMemoryMb">Total Memory (MB)</label>
+              <input id="totalMemoryMb" type="number" formControlName="totalMemoryMb" class="form-input" min="512" max="1048576" step="512" />
+              <span class="field-error" *ngIf="registerForm.get('totalMemoryMb')?.touched && registerForm.get('totalMemoryMb')?.invalid">
+                Min 512 MB required.
+              </span>
+            </div>
+          </div>
+
+          <div class="form-checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="simulated" />
+              <span>Simulated Infrastructure Host (Local synthetic telemetry)</span>
+            </label>
+            <p class="checkbox-hint">Clearly marks this host as simulated in accordance with CloudScale transparency rules.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeRegisterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Registering...' : 'Register Host' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

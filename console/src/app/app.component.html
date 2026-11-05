@@ -13,6 +13,8 @@
       <span class="badge-env">CONTROL PLANE</span>
 
       <nav class="nav-links">
+        <a *ngIf="authService.isAuthenticated()" routerLink="/nodes" routerLinkActive="active" class="nav-link">Compute Nodes</a>
+        <a *ngIf="authService.isAuthenticated()" routerLink="/workloads" routerLinkActive="active" class="nav-link">Workloads</a>
         <a routerLink="/health" routerLinkActive="active" class="nav-link">System Health</a>
       </nav>
     </div>

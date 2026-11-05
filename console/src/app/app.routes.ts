@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'health'
+    redirectTo: 'nodes'
   },
   {
     path: 'login',
@@ -15,11 +16,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'nodes',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/infrastructure/node-list/node-list.component').then(m => m.NodeListComponent)
+  },
+  {
+    path: 'workloads',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/workloads/workload-list/workload-list.component').then(m => m.WorkloadListComponent)
+  },
+  {
     path: 'health',
     loadComponent: () => import('./features/health/health.component').then(m => m.HealthComponent)
   },
   {
     path: '**',
-    redirectTo: 'health'
+    redirectTo: 'nodes'
   }
 ];
