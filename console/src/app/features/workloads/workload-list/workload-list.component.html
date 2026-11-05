@@ -68,17 +68,22 @@
       </button>
     </div>
 
-    <!-- Algorithm Selector for Manual Scheduling -->
+    <!-- Algorithm Filter & Placement Policy -->
     <div class="algo-selector-group">
       <div class="algo-label-box">
-        <label for="globalAlgoSelect">Scheduling Algorithm:</label>
-        <span class="algo-badge" title="Algorithm applied when manually scheduling Pending/Failed workloads or restarting">
-          Policy for ▶ Schedule & ↻ Restart
+        <label for="globalAlgoSelect">Filter Algorithm:</label>
+        <span class="algo-badge" title="Filter workloads by scheduling algorithm policy">
+          Filter & Placement Policy
         </span>
       </div>
-      <select id="globalAlgoSelect" [(ngModel)]="selectedAlgorithm" class="select-input">
-        <option value="RESOURCE_AWARE">Resource-Aware (Default / Variance Minimization)</option>
-        <option value="BEST_FIT">Best-Fit (Host Consolidation / Tight Packing)</option>
+      <select 
+        id="globalAlgoSelect" 
+        [ngModel]="algorithmFilter()" 
+        (ngModelChange)="onAlgorithmFilterChange($event)" 
+        class="select-input">
+        <option value="ALL">All Algorithms ({{ workloads().length }})</option>
+        <option value="RESOURCE_AWARE">Resource-Aware (Default / Balanced)</option>
+        <option value="BEST_FIT">Best-Fit (Host Consolidation)</option>
         <option value="FIRST_FIT">First-Fit (Low Latency Placement)</option>
         <option value="PRIORITY">Priority Headroom (Resilience)</option>
       </select>
@@ -103,6 +108,7 @@
           <th>Priority</th>
           <th>Requirements</th>
           <th>State</th>
+          <th>Algorithm</th>
           <th>Assigned Host</th>
           <th class="text-right">Actions</th>
         </tr>
@@ -132,6 +138,11 @@
             <td>
               <span class="state-pill state-{{ w.actualState.toLowerCase() }}">
                 {{ w.actualState }}
+              </span>
+            </td>
+            <td>
+              <span class="algo-pill algo-{{ (w.schedulingAlgorithm || 'RESOURCE_AWARE').toLowerCase() }}">
+                {{ formatAlgorithm(w.schedulingAlgorithm) }}
               </span>
             </td>
             <td>
@@ -194,7 +205,7 @@
 
           <!-- Failure Reason Sub-row -->
           <tr *ngIf="w.actualState === 'FAILED' && w.failureReason" class="failure-row">
-            <td colspan="7">
+            <td colspan="8">
               <div class="failure-detail">
                 <span class="failure-icon">⚠️</span>
                 <strong>Placement Constraint Failure:</strong> {{ w.failureReason }}
@@ -210,8 +221,22 @@
     <div class="empty-state">
       <div class="empty-icon">📦</div>
       <h3>No Workloads Found</h3>
-      <p>Submit a new compute workload to simulate cluster scheduling and lifecycle orchestration.</p>
-      <button class="btn btn-primary" (click)="openCreateModal()">+ Deploy Workload</button>
+      <p *ngIf="algorithmFilter() === 'ALL' && stateFilter() === 'ALL'">
+        Submit a new compute workload to simulate cluster scheduling and lifecycle orchestration.
+      </p>
+      <p *ngIf="algorithmFilter() !== 'ALL' || stateFilter() !== 'ALL'">
+        No workloads matched the active filter criteria:
+        <strong *ngIf="stateFilter() !== 'ALL'"> State: {{ stateFilter() }}</strong>
+        <strong *ngIf="algorithmFilter() !== 'ALL'"> • Algorithm: {{ formatAlgorithm(algorithmFilter()) }}</strong>.
+      </p>
+      <div class="empty-actions">
+        <button *ngIf="algorithmFilter() !== 'ALL' || stateFilter() !== 'ALL'" 
+                class="btn btn-secondary" 
+                (click)="algorithmFilter.set('ALL'); stateFilter.set('ALL')">
+          Reset Filter to All
+        </button>
+        <button class="btn btn-primary" (click)="openCreateModal()">+ Deploy Workload</button>
+      </div>
     </div>
   </ng-template>
 

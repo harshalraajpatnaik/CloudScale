@@ -20,6 +20,7 @@ public record WorkloadDTO(
         WorkloadState desiredState,
         WorkloadState actualState,
         String failureReason,
+        String schedulingAlgorithm,
         Instant scheduledAt,
         Instant createdAt
 ) {
@@ -37,6 +38,7 @@ public record WorkloadDTO(
                 w.getDesiredState(),
                 w.getActualState(),
                 w.getFailureReason(),
+                w.getSchedulingAlgorithm() != null ? w.getSchedulingAlgorithm() : "RESOURCE_AWARE",
                 w.getScheduledAt(),
                 w.getCreatedAt()
         );

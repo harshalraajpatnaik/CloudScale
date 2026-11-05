@@ -52,6 +52,7 @@ export interface Workload {
   desiredState: WorkloadState;
   actualState: WorkloadState;
   failureReason?: string;
+  schedulingAlgorithm?: SchedulingAlgorithmType;
   scheduledAt?: string;
   createdAt: string;
 }

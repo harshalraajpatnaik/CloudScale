@@ -74,6 +74,7 @@ public class SchedulerService {
             workload.setAssignedNode(targetNode);
             workload.setScheduledAt(Instant.now());
             workload.setFailureReason(null);
+            workload.setSchedulingAlgorithm(selectedAlgo);
             workload.transitionTo(WorkloadState.RUNNING);
             workload = workloadRepository.save(workload);
 
@@ -84,6 +85,7 @@ public class SchedulerService {
         } else {
             workload.setFailureReason("INSUFFICIENT_NODE_CAPACITY: No eligible active host possesses " 
                     + workload.getCpuCoresRequired() + " CPU cores and " + workload.getMemoryMbRequired() + " MB memory.");
+            workload.setSchedulingAlgorithm(selectedAlgo);
             workload.transitionTo(WorkloadState.FAILED);
             workload = workloadRepository.save(workload);
 

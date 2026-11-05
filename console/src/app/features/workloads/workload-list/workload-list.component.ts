@@ -22,6 +22,7 @@ export class WorkloadListComponent implements OnInit {
 
   // Filters & Scheduling
   stateFilter = signal<string>('ALL');
+  algorithmFilter = signal<string>('ALL');
   selectedAlgorithm: SchedulingAlgorithmType = 'RESOURCE_AWARE';
 
   // Modal State
@@ -67,9 +68,32 @@ export class WorkloadListComponent implements OnInit {
   }
 
   get filteredWorkloads(): Workload[] {
-    const filter = this.stateFilter();
-    if (filter === 'ALL') return this.workloads();
-    return this.workloads().filter(w => w.actualState === filter);
+    const sFilter = this.stateFilter();
+    const aFilter = this.algorithmFilter();
+
+    return this.workloads().filter(w => {
+      const matchState = sFilter === 'ALL' || w.actualState === sFilter;
+      const algo = w.schedulingAlgorithm || 'RESOURCE_AWARE';
+      const matchAlgo = aFilter === 'ALL' || algo === aFilter;
+      return matchState && matchAlgo;
+    });
+  }
+
+  onAlgorithmFilterChange(val: string): void {
+    this.algorithmFilter.set(val);
+    if (val !== 'ALL') {
+      this.selectedAlgorithm = val as SchedulingAlgorithmType;
+    }
+  }
+
+  formatAlgorithm(algo?: string): string {
+    switch (algo) {
+      case 'BEST_FIT': return 'Best-Fit';
+      case 'FIRST_FIT': return 'First-Fit';
+      case 'PRIORITY': return 'Priority';
+      case 'RESOURCE_AWARE':
+      default: return 'Resource-Aware';
+    }
   }
 
   get runningCount(): number {
@@ -85,13 +109,14 @@ export class WorkloadListComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    const defaultAlgo = this.algorithmFilter() !== 'ALL' ? (this.algorithmFilter() as SchedulingAlgorithmType) : this.selectedAlgorithm;
     this.createForm.reset({
       name: `workload-${Math.floor(100 + Math.random() * 900)}`,
       workloadType: 'SERVICE',
       priority: 'NORMAL',
       cpuCoresRequired: 2,
       memoryMbRequired: 2048,
-      schedulingAlgorithm: this.selectedAlgorithm,
+      schedulingAlgorithm: defaultAlgo,
       autoSchedule: true
     });
     this.showCreateModal.set(true);

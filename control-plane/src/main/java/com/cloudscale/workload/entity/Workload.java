@@ -56,6 +56,9 @@ public class Workload {
     @Column(name = "scheduled_at")
     private Instant scheduledAt;
 
+    @Column(name = "scheduling_algorithm", length = 50)
+    private String schedulingAlgorithm = "RESOURCE_AWARE";
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -110,6 +113,9 @@ public class Workload {
 
     public Instant getScheduledAt() { return scheduledAt; }
     public void setScheduledAt(Instant scheduledAt) { this.scheduledAt = scheduledAt; }
+
+    public String getSchedulingAlgorithm() { return schedulingAlgorithm; }
+    public void setSchedulingAlgorithm(String schedulingAlgorithm) { this.schedulingAlgorithm = schedulingAlgorithm; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
